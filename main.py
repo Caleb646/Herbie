@@ -10,6 +10,7 @@ import numpy as np
 
 from typing import Union, Callable
 from queue import PriorityQueue
+from copy import deepcopy
 import time
 import math
 
@@ -202,10 +203,9 @@ class Map:
         if raw_distance_in_cm == -1: # -1 = object wasnt found
             return (-1, -1)
         distance = raw_distance_in_cm / self.cell_size_in_cm
-        rads = math.radians(car_angle + ultra_sonic_angle) #* -1
-        rads = abs(rads)
+        rads = math.radians(car_angle + ultra_sonic_angle)
         entry_x = distance * math.cos(rads) + x
-        entry_y = distance * math.sin(rads) + y
+        entry_y = distance * -math.sin(rads) + y
         entry_x = round(entry_x)
         entry_y = round(entry_y)
         return (entry_x, entry_y)
@@ -250,14 +250,19 @@ class Car:
     def drive(self, target: tuple[int, int]):
         self._init_map()
         path = self.a_star(target)
-        if not path:
-            print("Failed to find path")
-        print(path)
+        self.print_path_trace(path)
 
     def print_position(self):
         x, y, _ = self.current_position
         self.mapp._map[y, x] = 2
         print(self.mapp._map)
+
+    def print_path_trace(self, path: list[tuple[int, int]]) -> None:
+        copied_map: np.ndarray = deepcopy(self.mapp._map)
+        start_marker = 2
+        for i, (x, y) in enumerate(path):
+            copied_map[y, x] = start_marker + i
+        print(copied_map)
     
     def shutdown(self):
         self.drive_train.shutdown()
@@ -275,6 +280,12 @@ class Car:
 
             def __eq__(self, onode: "Node") -> bool:
                 return (self.x == onode.x and self.y == onode.y)
+
+            def __gt__(self, other: "Node") -> bool:
+                return (self.fscore > other.fscore)
+            
+            def __lt__(self, other: "Node") -> bool:
+                return not (self.fscore > other.fscore or self.fscore == other.fscore)
             
             def calc_scores(self, current_node: "Node", target_node: "Node") -> "Node":
                 self.hscore = self.get_distance(target_node)
@@ -295,7 +306,8 @@ class Car:
             while current_node:
                 path.append((current_node.x, current_node.y))
                 current_node = current_node.prev_node
-            return path.reverse()
+            path.reverse()
+            return path
 
         target_node = Node(target[0], target[1])
         start_x, start_y, _ = self.current_position
@@ -305,15 +317,13 @@ class Car:
         # g = current.g + distance(neighbor, current)
         # h = distance(current, target)
         # f = g + h
-        open_list = [starting_node]
-        #open_list = PriorityQueue()
-        #open_list.put()
+        open_list = PriorityQueue()
+        open_list.put((0, starting_node))
         open_set = {starting_node.key : 0.0}
         closed_set = set()
-        #max_searches = 10_000
-        self.print_position()
-        while len(open_list) > 0:# and max_searches > 0:
-            current_node: Node = open_list.pop()
+        #self.print_position()
+        while open_list.not_empty:
+            priority, current_node = open_list.get()
             if current_node == target_node:
                 return find_path(current_node)
             closed_set.add(current_node.key)
@@ -323,10 +333,9 @@ class Car:
                     continue  
                 existing_gscore = open_set.get(neigh_node.key, None)
                 if existing_gscore and neigh_node.gscore > existing_gscore:
-                    continue
-                open_list.append(neigh_node)
+                        continue
+                open_list.put((neigh_node.fscore, neigh_node))
                 open_set[neigh_node.key] = neigh_node.gscore
-            #max_searches -= 1
         return []
 
     @property
@@ -350,26 +359,33 @@ def test_map():
     #   positive degrees = left 
     #   negative degrees = right
 
-    # For Map degrees 
+    # For Map degrees from the perspective of a Numpy Array 
     #   0 = right
     #   270 = down
     #   180 = left
     #   90 = up
+
+    LOOK_LEFT = 90
+    LOOK_RIGHT = -90
     test_entries = [ 
-        ((num_rows // 2, num_colums // 2, 0), (0, 30), (8, 5)),
-        ((num_rows // 2, num_colums // 2, 0), (-90, 40), (5, 9)),
-        ((num_rows // 2, num_colums // 2, 270), (-90, 30), (2, 5)),
-        ((num_rows // 2, num_colums // 2, 270), (90, 30), (8, 5)),
-        ((num_rows // 2, num_colums // 2, 180), (90, 30), (5, 2)),
-        ((num_rows // 2, num_colums // 2, 180), (-90, 30), (5, 8)),
-        ((num_rows // 2, num_colums // 2, 90), (90, 30), (2, 5)),
-        ((num_rows // 2, num_colums // 2, 90), (-90, 30), (8, 5)),
+        ((num_rows // 2, num_colums // 2, 0), (0, 30), (8, 5)), # x, y
+        ((num_rows // 2, num_colums // 2, 0), (LOOK_LEFT, 30), (5, 2)),
+        ((num_rows // 2, num_colums // 2, 0), (LOOK_RIGHT, 30), (5, 8)),
+
+        ((num_rows // 2, num_colums // 2, 270), (LOOK_RIGHT, 30), (2, 5)),
+        ((num_rows // 2, num_colums // 2, 270), (LOOK_LEFT, 30), (8, 5)),
+
+        ((num_rows // 2, num_colums // 2, 180), (LOOK_LEFT, 30), (5, 8)),
+        ((num_rows // 2, num_colums // 2, 180), (LOOK_RIGHT, 30), (5, 2)),
+
+        ((num_rows // 2, num_colums // 2, 90), (LOOK_LEFT, 30), (2, 5)),
+        ((num_rows // 2, num_colums // 2, 90), (LOOK_RIGHT, 30), (8, 5)),
     ]
     for entry in test_entries:
         position, measurement, obj_positions = entry
         x, y = obj_positions
         tx, ty = mapp.get_entry_idx(position, measurement)
-        assert (x, y) == (tx, ty), f"Target: {obj_positions} != Actual: {(tx, ty)}"
+        assert (x, y) == (tx, ty), f"Target: {obj_positions} != Actual: {(tx, ty)} -> Car Pos {position} Servo Angle {measurement}"
 
 def test_ultrasonic():
     us = UltraSonic(servo_offset = 35)
@@ -393,9 +409,9 @@ if __name__ == "__main__":
         car = Car(
             DriveTrain(), 
             UltraSonic(servo_offset = 35), 
-            Map(11, 11, 20)
+            Map(11, 11, 15)
             )
-        car.drive((11//2, 0))
+        car.drive((7, 7))
     finally:
         car.shutdown()
 
