@@ -43,8 +43,21 @@ class DriveTrain:
         self.right_rear.set_power(0)
 
     def forward_for(self, power: int, centimeters: float) -> None:
+        starting_speed = 30 # cm
+        time_to_move = centimeters / starting_speed
         self.forward(power)
-        time.sleep(1)
+        step = 0.1
+        num_steps = time_to_move // step
+        max_steps = 100
+        while num_steps > 0 and max_steps > 0: 
+            time.sleep(step)
+            current_speed = (self.get_left_rear_speed + self.get_right_rear_speed) / 2
+            expected_distance_travelled = starting_speed * step
+            actual_distance_travelled = current_speed * step
+            missed_step = (expected_distance_travelled - actual_distance_travelled) / expected_distance_travelled
+            num_steps += missed_step - 1
+            max_steps -= 1
+        self.stop()
 
     def forward(self, power: int) -> None:
         self.left_front.set_power(power)
@@ -248,14 +261,51 @@ class Car:
         self.heading = 0 # degrees
 
     def drive(self, target: tuple[int, int]):
-        self._init_map()
+        self._scan_and_update_map()  
+        #self.print_path_trace(path)
+        max_steps = 1_000
         path = self.a_star(target)
+        # path[0] is the current position of the car
+        current_path_idx = 1
         self.print_path_trace(path)
+        while self.current_position[0:2] != target and max_steps > 0:           
+            should_update_path = self._move_to(path[current_path_idx])
+            current_path_idx += 1
+            print(should_update_path, current_path_idx)
+            if should_update_path:
+                path = self.a_star(target)
+                self.print_path_trace(path)
+                current_path_idx = 1
+            max_steps -= 1
+
+    def _move_to(self, point: tuple[int, int]) -> bool:
+        x, y, heading = self.current_position
+        target_x, target_y = point
+        assert (abs(x - target_x) + abs(y - target_y)) == 1,\
+        f"Current: {(x, y)} -> Target: {(target_x, target_y)} must be within 1 cell of each other"
+        if x - target_x == -1: # forward
+            self._move_forward(self.mapp.cell_size_in_cm)
+        elif x - target_x == 1: # backward
+            self._turn(180)
+        elif y - target_y == -1: # turn right
+            self._turn(90)
+        else: # turn left
+            self._turn(-90)
+        return self._scan_and_update_map()
+
+    def _move_forward(self, distance):
+        self.drive_train.forward_for(30, self.mapp.cell_size_in_cm)
+        scaled_distance = distance / self.mapp.cell_size_in_cm
+        self.x += int(math.cos(math.radians(self.heading)) * scaled_distance)
+        # y has to be flipped because array starts in the top left
+        self.y += int(-math.sin(math.radians(self.heading)) * scaled_distance)
 
     def print_position(self):
         x, y, _ = self.current_position
+        temp = self.mapp._map[y, x]
         self.mapp._map[y, x] = 2
         print(self.mapp._map)
+        self.mapp._map[y, x] = temp
 
     def print_path_trace(self, path: list[tuple[int, int]]) -> None:
         copied_map: np.ndarray = deepcopy(self.mapp._map)
@@ -341,14 +391,15 @@ class Car:
     @property
     def current_position(self) -> tuple[int, int, float]:
         return (self.x, self.y, self.heading)
+    
+    def _scan_and_update_map(self) -> bool:
+        objects = self.ultrasonic.scan(65, -65, 15)
+        self.mapp.add_entries(self.current_position, objects)
+        return len(objects) > 0
 
     def _turn(self, degrees_to: float) -> None:
         self.drive_train.rotate(degrees_to)
         self.heading += degrees_to
-
-    def _init_map(self):
-        self.mapp.add_entries(self.current_position, self.ultrasonic.scan(65, -65, 15))
-
 
 def test_map():
     num_rows = 11
@@ -364,9 +415,8 @@ def test_map():
     #   270 = down
     #   180 = left
     #   90 = up
-
-    LOOK_LEFT = 90
-    LOOK_RIGHT = -90
+    LOOK_LEFT = 90 # Servo Look Left
+    LOOK_RIGHT = -90 # Servo Look Right
     test_entries = [ 
         ((num_rows // 2, num_colums // 2, 0), (0, 30), (8, 5)), # x, y
         ((num_rows // 2, num_colums // 2, 0), (LOOK_LEFT, 30), (5, 2)),
@@ -411,7 +461,7 @@ if __name__ == "__main__":
             UltraSonic(servo_offset = 35), 
             Map(11, 11, 15)
             )
-        car.drive((7, 7))
+        car.drive((6, 5))
     finally:
         car.shutdown()
 
