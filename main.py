@@ -282,22 +282,23 @@ class Car:
         x, y, heading = self.current_position
         projx, projy = self.mapp.project_point((0, 0), self.heading, self.mapp.cell_size_in_cm)
         target_x, target_y = point[0] - x, point[1] - y
-        assert abs(target_x + target_y) == 1, f"{(target_x, target_y)}"
-        a = np.array([projx, projy])
+        #assert abs(target_x + target_y) == 1, f"{(target_x, target_y)}"
+        a = np.array([projx, -projy])
         b = np.array([target_x, -target_y])
         amag = np.sqrt(np.dot(a, a))
         bmag = np.sqrt(np.dot(b, b))
         ab = np.dot(a, b) / (amag * bmag)
-        angle = math.degrees(math.acos(ab)) * np.cross(a, b)
-        print(f"Proj: {(projx, projy)} Targ {(target_x, target_y)}", angle)
+        cross = np.cross(a, b)
+        angle = math.degrees(math.acos(ab)) * cross      
+        print(f"Proj: {(projx, projy)} Targ {(target_x, target_y)} Heading: {self.heading}", angle, cross)
         if abs(angle) < 1: # forward
             self._move_forward(self.mapp.cell_size_in_cm)
-        else: # turn left
+        else:
             self._turn(angle)
         return self._scan_and_update_map()
 
     def _move_forward(self, distance):
-        #self.drive_train.forward_for(30, self.mapp.cell_size_in_cm)
+        self.drive_train.forward_for(30, self.mapp.cell_size_in_cm)
         scaled_distance = distance / self.mapp.cell_size_in_cm
         self.x += int(math.cos(math.radians(self.heading)) * scaled_distance)
         # y has to be flipped because array starts in the top left
@@ -408,7 +409,7 @@ class Car:
             )
 
     def _turn(self, degrees_to: float) -> None:
-        #self.drive_train.rotate(degrees_to)
+        self.drive_train.rotate(degrees_to)
         self.heading += degrees_to
 
 def test_map():
@@ -466,13 +467,13 @@ if __name__ == "__main__":
     #test_ultrasonic()
     #test_drive_train()
     try:
-        map_size = 11
+        map_size = 21
         car = Car(
             DriveTrain(), 
             UltraSonic(servo_offset = 35), 
             Map(map_size, map_size, 10)
             )
-        car.drive((car.x, car.y + 1))
+        car.drive((car.x + 4, car.y))
         #car._turn(-90)
     finally:
         car.shutdown()
