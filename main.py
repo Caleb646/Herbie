@@ -11,6 +11,7 @@ from DriveTrain import DriveTrain
 from Mapp import Mapp
 from Math import Math
 from Pathfinder import Pathfinder
+from Client import Client
 import test
 
 def soft_reset() -> None:
@@ -94,14 +95,18 @@ class Car:
         self.x = self.mapp.num_columns // 2
         self.y = self.mapp.num_rows // 2
         self.heading = 0 # degrees
+        self.client = Client()
+        self.current_path = []
 
     def drive(self, target: tuple[int, int]):
         self._scan_and_update_map()  
         path = self.pathfinder.a_star(self.mapp, self.xy_position, target)
+        self.current_path = path
         # path[0] is the current position of the car
         current_path_idx = 1
         self.print_path_trace(path)
         try:
+            self.send_server_data()
             while self.xy_position != target:
                 if current_path_idx > len(path):
                     print(f"Invalid Path Idx: {current_path_idx} and Map:\n {self.mapp._map}")
@@ -111,6 +116,8 @@ class Car:
                 if should_update_path:
                     path = self.pathfinder.a_star(self.mapp, self.xy_position, target)
                     #self.print_path_trace(path)
+                    self.current_path = path
+                    self.send_server_data()
                     current_path_idx = 1
         except Exception as e:
             self.shutdown()
@@ -162,9 +169,21 @@ class Car:
         for i, (x, y) in enumerate(path):
             copied_map[y, x] = start_marker + i
         print("Path Trace:\n", copied_map)
+
+    def send_server_data(self):
+        data = {
+            "map_size": self.mapp.num_columns,
+            "cell_size": self.mapp.cell_size_in_cm,
+            "obstacles": self.mapp.get_obstacles(),
+            "position": self.xy_position,
+            "heading" : self.heading,
+            "current_path": self.current_path
+        }
+        self.client.send(data)
     
     def shutdown(self) -> None:
         self.drive_train.shutdown()
+        self.client.shutdown()
 
     @property
     def current_position(self) -> tuple[int, int, float]:
@@ -193,7 +212,7 @@ if __name__ == "__main__":
             UltraSonic(servo_offset = 35), 
             Mapp(map_size, map_size, 10)
             )
-        car.drive((car.x + 7, car.y))
+        car.drive((car.x + 1, car.y))
         #car._turn(-90)
     finally:
         car.shutdown()
