@@ -97,11 +97,13 @@ class Car:
         self.heading = 0 # degrees
         self.client = Client()
         self.current_path = []
+        self.target = ()
 
     def drive(self, target: tuple[int, int]):
         self._scan_and_update_map()  
         path = self.pathfinder.a_star(self.mapp, self.xy_position, target)
         self.current_path = path
+        self.target = target
         # path[0] is the current position of the car
         current_path_idx = 1
         self.print_path_trace(path)
@@ -177,7 +179,8 @@ class Car:
             "obstacles": self.mapp.get_obstacles(),
             "position": self.xy_position,
             "heading" : self.heading,
-            "current_path": self.current_path
+            "current_path": self.current_path,
+            "target": self.target
         }
         self.client.send(data)
     
@@ -212,7 +215,7 @@ if __name__ == "__main__":
             UltraSonic(servo_offset = 35), 
             Mapp(map_size, map_size, 10)
             )
-        car.drive((car.x + 1, car.y))
+        car.drive((car.x + 10, car.y))
         #car._turn(-90)
     finally:
         car.shutdown()

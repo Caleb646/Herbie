@@ -76,12 +76,14 @@ if __name__ == "__main__":
         obstacles: list[tuple[int, int]] = data.get("obstacles", [])
         position: tuple[int, int] = data.get("position", ())
         heading: float = data.get("heading", -1)
+        target: tuple = data.get("target", ())
 
         if current_path:
             write_to_map(car_map, previous_path, value=(0, 0, 0))
             write_to_map(car_map, current_path, value=(255, 0, 0))
             previous_path = current_path
-        #write_to_map(car_map, obstacles, value=(0, 255, 0))
+        write_to_map(car_map, obstacles, value=(0, 255, 0))
         write_to_map(car_map, [position], value=(0, 0, 255))
+        write_to_map(car_map, [target], value=(255, 255, 255))
 
     cv2_thread.join()
