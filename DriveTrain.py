@@ -93,7 +93,7 @@ class DriveTrain:
         target_radians = math.radians(abs(degrees_to))
         radius_from_motor_to_center = 11.5 / 100 # centimeters to meters
         time_to_rotate = (target_radians * radius_from_motor_to_center) / starting_speed # in seconds
-        turn_func(30) # start turning
+        turn_func(60) # start turning
         block_for(
             time_to_rotate, 
             starting_speed, 

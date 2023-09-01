@@ -76,6 +76,7 @@ class Pathfinder:
             #priority, current_node = open_list.get(block=False)
             current_node = heappop(open_list)
             if current_node == target_node:
+                print("Found new path")
                 return find_path(current_node)
             closed_set.add(current_node.key)
             for neig_x, neig_y in mapp.get_open_neighbors(current_node.x, current_node.y):

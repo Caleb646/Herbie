@@ -101,38 +101,33 @@ class Car:
         # path[0] is the current position of the car
         current_path_idx = 1
         self.print_path_trace(path)
-
         try:
             while self.xy_position != target:
                 if current_path_idx > len(path):
-                    print(f"Invalid Path Idx: {current_path_idx} and Path: {path}")
+                    print(f"Invalid Path Idx: {current_path_idx} and Map:\n {self.mapp._map}")
                     break           
                 should_update_path = self._move_to(path[current_path_idx])
                 current_path_idx += 1
                 if should_update_path:
-                    path = self.pathfinder.a_star(target)
-                    self.print_path_trace(path)
+                    path = self.pathfinder.a_star(self.mapp, self.xy_position, target)
+                    #self.print_path_trace(path)
                     current_path_idx = 1
         except Exception as e:
             self.shutdown()
             raise e
 
     def _move_to(self, target: tuple[int, int]) -> bool:
-        new_heading = Math.calc_new_heading(self.current_position, target)
+        angle_to_turn = Math.calc_turning_angle(self.current_position, target)
         #print(f"Proj: {(dirx, diry)} Targ {(target_x, target_y)} Heading: {self.heading}", angle, cross)
-        if abs(new_heading) < 1: # forward
+        if abs(angle_to_turn) < 1: # forward
             self._move_forward(self.mapp.cell_size_in_cm)
         else:
-            self._turn(new_heading)
+            self._turn(angle_to_turn)
         return self._scan_and_update_map()
 
     def _move_forward(self, distance) -> bool:
         self.drive_train.forward_for(30, self.mapp.cell_size_in_cm)
-        dirx, diry = Math.project_point_tuple(
-            self.direction_vector, 
-            distance / self.mapp.cell_size_in_cm,
-            flip_y = True # y has to be flipped because array starts in the top left
-            )
+        dirx, diry = self.get_direction_vector(distance / self.mapp.cell_size_in_cm)
         dirx = round(dirx)
         diry = round(diry)
         # dirx and diry should be either 0, 1, or -1
@@ -144,6 +139,10 @@ class Car:
     def _turn(self, degrees_to: float) -> None:
         self.drive_train.rotate(degrees_to)
         self.heading += degrees_to
+        if self.heading < 0:
+            self.heading = 360 - abs(self.heading)
+        self.heading %= 360
+        print(self.heading)
 
     def _scan_and_update_map(self) -> bool:
         return self.mapp.add_obstacles(
@@ -175,23 +174,26 @@ class Car:
     def xy_position(self) -> tuple[int, int]:
         return (self.x, self.y)
     
-    @property
-    def direction_vector(self) -> tuple[int, int]:
-        return Math.project_point_tuple((0, 0, self.heading), self.mapp.cell_size_in_cm)
+    def get_direction_vector(self, scaled_distance=1) -> tuple[int, int]:
+        return Math.project_point_tuple(
+            (0, 0, self.heading), 
+            scaled_distance, 
+            flip_y=True
+            )
 
 if __name__ == "__main__":
     soft_reset()
     time.sleep(0.2)
     #test.test_main()
-    test.test_new_heading()
+    #test.test_new_heading()
     try:
-        map_size = 21
+        map_size = 51
         car = Car(
             DriveTrain(), 
             UltraSonic(servo_offset = 35), 
             Mapp(map_size, map_size, 10)
             )
-        #car.drive((car.x + 4, car.y))
+        car.drive((car.x + 7, car.y))
         #car._turn(-90)
     finally:
         car.shutdown()

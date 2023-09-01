@@ -49,7 +49,7 @@ def test_map():
         tx, ty = mapp.get_obstacle_idx(position, measurement)
         assert (x, y) == (tx, ty), f"Target: {obj_positions} != Actual: {(tx, ty)} -> Car Pos {position} Servo Angle {measurement}"
 
-def test_new_heading():
+def test_turning_angle():
     TURN_LEFT = 90
     TURN_RIGHT = -90
 
@@ -81,7 +81,7 @@ def test_new_heading():
     ]
 
     for current_pos, target_xy, expected_new_heading in current_and_new:
-        new_heading = Math.calc_new_heading(current_pos, target_xy)
+        new_heading = Math.calc_turning_angle(current_pos, target_xy)
         assert expected_new_heading == new_heading, f"Current: {current_pos} Target: {target_xy} New: {new_heading} != Expected {expected_new_heading}"
 
 def test_drive_train():

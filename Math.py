@@ -49,7 +49,7 @@ class Math:
         return float(np.cross(va, vb))
   
     @staticmethod
-    def calc_new_heading(origin: tuple[int, int, float], target: tuple[int, int]) -> float:
+    def calc_turning_angle(origin: tuple[int, int, float], target: tuple[int, int]) -> float:
         origin_x, origin_y, origin_angle = origin
         origin_dir_x, origin_dir_y = Math.project_point_tuple(
             (0, 0, origin_angle), 
