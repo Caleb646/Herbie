@@ -2,6 +2,7 @@ from typing import Any
 from collections import Mapping
 import socket
 import json
+import pickle
 
 
 class Server:
@@ -23,4 +24,4 @@ class Server:
 if __name__ == "__main__":
     server = Server()
     for data in server.run():
-        print(data)
+        print(pickle.loads(data["data"]))

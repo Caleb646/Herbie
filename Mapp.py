@@ -78,6 +78,14 @@ class Mapp:
         for ang_dist in angles_distances:
             found_new_obstacle |= self.add_obstacle(xydir_position, ang_dist)
         return found_new_obstacle
+    
+    def get_obstacles(self) -> list[tuple[int, int]]:
+        obstacles = []
+        for y in range(self.num_rows):
+            for x in range(self.num_columns):
+                if not self.is_open(y, x):
+                    obstacles.append((x, y))
+        return obstacles
 
     def print_map(self) -> None:
         print(self._map)
