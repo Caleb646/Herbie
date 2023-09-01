@@ -1,4 +1,3 @@
-from collections import Mapping
 from typing import Any
 import socket
 import json
@@ -11,7 +10,7 @@ class Client:
         self.server_port = server_port
         self.socket.connect((self.server_host, self.server_port))
 
-    def send(self, data: Mapping[str, Any]):
+    def send(self, data: dict[str, Any]):
         result = self.socket.send(json.dumps(data).encode())
 
 
