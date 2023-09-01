@@ -1,19 +1,17 @@
-import picar_4wd as picar
 from picar_4wd.pwm import PWM
-from picar_4wd.adc import ADC
 from picar_4wd.pin import Pin
-from picar_4wd.motor import Motor
 from picar_4wd.servo import Servo
-from picar_4wd.speed import Speed
-
-import numpy as np
 
 from typing import Union, Callable
-from queue import PriorityQueue
-from heapq import heapify, heappush, heappop
 from copy import deepcopy
+import numpy as np
 import time
-import math
+
+from DriveTrain import DriveTrain
+from Mapp import Mapp
+from Math import Math
+from Pathfinder import Pathfinder
+import test
 
 def soft_reset() -> None:
     soft_reset_pin = Pin("D16")
@@ -21,113 +19,6 @@ def soft_reset() -> None:
     time.sleep(0.01)
     soft_reset_pin.high()
     time.sleep(0.01)
-
-class DriveTrain:
-    def __init__(self):
-        self.left_front = Motor(PWM("P13"), Pin("D4"), is_reversed=False) # motor 1
-        self.right_front = Motor(PWM("P12"), Pin("D5"), is_reversed=False) # motor 2
-        self.left_rear = Motor(PWM("P8"), Pin("D11"), is_reversed=False) # motor 3
-        self.right_rear = Motor(PWM("P9"), Pin("D15"), is_reversed=False) # motor 4
-
-        self.left_rear_speed = Speed(pin=25)
-        self.right_rear_speed = Speed(pin=4)    
-   
-        self.left_rear_speed.start()
-        self.right_rear_speed.start()
-
-        self.stop()
-
-    def stop(self) -> None:
-        self.left_front.set_power(0)
-        self.left_rear.set_power(0)
-        self.right_front.set_power(0)
-        self.right_rear.set_power(0)
-
-    def forward_for(self, power: int, centimeters: float) -> None:
-        starting_speed = 30 # cm
-        time_to_move = centimeters / starting_speed
-        self.forward(power)
-        step = 0.1
-        num_steps = time_to_move // step
-        max_steps = 100
-        while num_steps > 0 and max_steps > 0: 
-            time.sleep(step)
-            current_speed = (self.get_left_rear_speed + self.get_right_rear_speed) / 2
-            expected_distance_travelled = starting_speed * step
-            actual_distance_travelled = current_speed * step
-            missed_step = (expected_distance_travelled - actual_distance_travelled) / expected_distance_travelled
-            num_steps += missed_step - 1
-            max_steps -= 1
-        self.stop()
-
-    def forward(self, power: int) -> None:
-        self.left_front.set_power(power)
-        self.left_rear.set_power(power)
-        self.right_front.set_power(power)
-        self.right_rear.set_power(power)
-
-    def backward(self, power: int) -> None:
-        self.left_front.set_power(-power)
-        self.left_rear.set_power(-power)
-        self.right_front.set_power(-power)
-        self.right_rear.set_power(-power)
-
-    def turn_left(self, power: int) -> None:
-        self.left_front.set_power(-power)
-        self.left_rear.set_power(-power)
-        self.right_front.set_power(power)
-        self.right_rear.set_power(power)
-
-    def turn_right(self, power: int) -> None:
-        self.left_front.set_power(power)
-        self.left_rear.set_power(power)
-        self.right_front.set_power(-power)
-        self.right_rear.set_power(-power)
-
-    def rotate(self, degrees_to: float):
-        self.stop()
-        if degrees_to == 0:
-            return
-        elif degrees_to < 0:    # right
-            self._rotate(degrees_to, self.turn_right)
-        else:                   # left
-            self._rotate(degrees_to, self.turn_left)
-        self.stop()
-
-    def _rotate(self, degrees_to: float, turn_func: Callable[[int], None]) -> None:
-        starting_speed = 35 / 100 # centimeters per second to meters per second
-        target_radians = math.radians(abs(degrees_to))
-        radius_from_motor_to_center = 11.5 / 100 # centimeters to meters
-        time_to_rotate = (target_radians * radius_from_motor_to_center) / starting_speed # in seconds
-        turn_func(30) # start turning
-        step = 0.01
-        num_steps = time_to_rotate // step
-        max_steps = 1000
-
-        while num_steps > 0 and max_steps > 0: 
-            time.sleep(step)
-            #current_speed = min(self.get_left_rear_speed, self.get_right_rear_speed) / 100
-            current_speed = ((self.get_left_rear_speed + self.get_right_rear_speed) / 2) / 100
-            expected_distance_travelled = starting_speed * step
-            actual_distance_travelled = current_speed * step
-            missed_step = (expected_distance_travelled - actual_distance_travelled) / expected_distance_travelled
-            num_steps += missed_step - 1
-            max_steps -= 1
-
-    def shutdown(self) -> None:
-        self.stop()
-        self.left_rear_speed.deinit()
-        self.right_rear_speed.deinit()
-
-    @property
-    def get_left_rear_speed(self) -> Union[int, float]: # speed in centimeters per second
-        return self.left_rear_speed()
-    @property
-    def get_right_rear_speed(self) -> Union[int, float]: # speed in centimeters per second
-        return self.right_rear_speed()
-    @property
-    def get_avg_speed(self) -> float:
-        return (self.get_left_rear_speed + self.get_right_rear_speed) / 2.0
 
 
 class UltraSonic:
@@ -189,122 +80,77 @@ class UltraSonic:
             measurements.append(self.get_distance_at(to_degrees - (angle_step * current_step)))
 
         return measurements
-    
-class Map:
-    def __init__(self, num_rows: int, num_columns: int, cell_size_in_cm: int) -> None:
-        self.num_columns = num_columns
-        self.num_rows = num_rows
-        self.cell_size_in_cm = cell_size_in_cm
-        # row = y and column = x
-        self._map = np.zeros((self.num_rows, self.num_columns), dtype=np.uint8)
-
-    def is_inbounds(self, x: int, y: int) -> bool:
-        if x < 0 or x >= self.num_columns:
-            return False
-        if y < 0 or y >= self.num_rows:
-            return False
-        return True
-    
-    def get_open_neighbors(self, x, y) -> tuple[int, int]:
-        offsets = ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))
-        for x, y in offsets:
-            if self.is_inbounds(x, y) and self._map[y, x] != 1: # not a block
-                yield (x, y)
-
-    def get_entry_idx(self, xydir_position: tuple[int, int, float], angle_and_distance: tuple[float, float]) -> tuple[int, int]:
-        x, y, car_angle = xydir_position 
-        ultra_sonic_angle, raw_distance_in_cm = angle_and_distance
-        if raw_distance_in_cm == -1: # -1 = object wasnt found
-            return (-1, -1)
-        distance = raw_distance_in_cm / self.cell_size_in_cm
-        rads = math.radians(car_angle + ultra_sonic_angle)
-        entry_x = distance * math.cos(rads) + x
-        entry_y = distance * -math.sin(rads) + y
-        entry_x = round(entry_x)
-        entry_y = round(entry_y)
-        return (entry_x, entry_y)
-    
-    def add_entry(self, xydir_position: tuple[int, int, float], angle_and_distance: tuple[float, float]) -> bool:
-        x, y = self.get_entry_idx(xydir_position, angle_and_distance)
-        # row = y and column = x
-        if self.is_inbounds(x, y) and self._map[y, x] != 1:
-            self._map[y, x] = np.uint8(1)
-            return True
-        return False
-
-    def project_point(self, point: tuple[int, int], heading: float, raw_distance: float) -> tuple[int, int]:
-        x, y = point
-        distance = raw_distance / self.cell_size_in_cm
-        rads = math.radians(heading)
-        entry_x = distance * math.cos(rads) + x
-        entry_y = distance * -math.sin(rads) + y
-        entry_x = round(entry_x)
-        entry_y = round(entry_y)
-        return (entry_x, entry_y)
-
-    def add_entries(self, xydir_position: tuple[int, int, float], ang_distances: list[tuple[float, float]]) -> bool:
-        found_new_object = False
-        for ang_dist in ang_distances:
-            found_new_object |= self.add_entry(xydir_position, ang_dist)
-        return found_new_object
-
-    def print_map(self) -> None:
-        print(self._map)
 
 class Car:
-    def __init__(self, drive_train: DriveTrain, ultrasonic: UltraSonic, mapp: Map) -> None:
+    LEFT_TURN = 90
+    RIGHT_TURN = -90
+    OPPOSITE_TURN = 180
+
+    def __init__(self, drive_train: DriveTrain, ultrasonic: UltraSonic, mapp: Mapp) -> None:
         self.drive_train = drive_train
         self.ultrasonic = ultrasonic
         self.mapp = mapp
+        self.pathfinder = Pathfinder()
         self.x = self.mapp.num_columns // 2
         self.y = self.mapp.num_rows // 2
         self.heading = 0 # degrees
 
     def drive(self, target: tuple[int, int]):
         self._scan_and_update_map()  
-        #self.print_path_trace(path)
-        max_steps = 1_000
-        path = self.a_star(target)
+        path = self.pathfinder.a_star(self.mapp, self.xy_position, target)
         # path[0] is the current position of the car
         current_path_idx = 1
         self.print_path_trace(path)
-        while self.current_position[0:2] != target and max_steps > 0:           
-            should_update_path = self._move_to(path[current_path_idx])
-            current_path_idx += 1
-            #print(should_update_path, current_path_idx)
-            if should_update_path:
-                path = self.a_star(target)
-                self.print_path_trace(path)
-                current_path_idx = 1
-            max_steps -= 1
 
-    def _move_to(self, point: tuple[int, int]) -> bool:
-        x, y, heading = self.current_position
-        projx, projy = self.mapp.project_point((0, 0), self.heading, self.mapp.cell_size_in_cm)
-        target_x, target_y = point[0] - x, point[1] - y
-        #assert abs(target_x + target_y) == 1, f"{(target_x, target_y)}"
-        a = np.array([projx, -projy])
-        b = np.array([target_x, -target_y])
-        amag = np.sqrt(np.dot(a, a))
-        bmag = np.sqrt(np.dot(b, b))
-        ab = np.dot(a, b) / (amag * bmag)
-        cross = np.cross(a, b)
-        angle = math.degrees(math.acos(ab)) * cross      
-        print(f"Proj: {(projx, projy)} Targ {(target_x, target_y)} Heading: {self.heading}", angle, cross)
-        if abs(angle) < 1: # forward
+        try:
+            while self.xy_position != target:
+                if current_path_idx > len(path):
+                    print(f"Invalid Path Idx: {current_path_idx} and Path: {path}")
+                    break           
+                should_update_path = self._move_to(path[current_path_idx])
+                current_path_idx += 1
+                if should_update_path:
+                    path = self.pathfinder.a_star(target)
+                    self.print_path_trace(path)
+                    current_path_idx = 1
+        except Exception as e:
+            self.shutdown()
+            raise e
+
+    def _move_to(self, target: tuple[int, int]) -> bool:
+        new_heading = Math.calc_new_heading(self.current_position, target)
+        #print(f"Proj: {(dirx, diry)} Targ {(target_x, target_y)} Heading: {self.heading}", angle, cross)
+        if abs(new_heading) < 1: # forward
             self._move_forward(self.mapp.cell_size_in_cm)
         else:
-            self._turn(angle)
+            self._turn(new_heading)
         return self._scan_and_update_map()
 
-    def _move_forward(self, distance):
+    def _move_forward(self, distance) -> bool:
         self.drive_train.forward_for(30, self.mapp.cell_size_in_cm)
-        scaled_distance = distance / self.mapp.cell_size_in_cm
-        self.x += int(math.cos(math.radians(self.heading)) * scaled_distance)
-        # y has to be flipped because array starts in the top left
-        self.y += int(-math.sin(math.radians(self.heading)) * scaled_distance)
+        dirx, diry = Math.project_point_tuple(
+            self.direction_vector, 
+            distance / self.mapp.cell_size_in_cm,
+            flip_y = True # y has to be flipped because array starts in the top left
+            )
+        dirx = round(dirx)
+        diry = round(diry)
+        # dirx and diry should be either 0, 1, or -1
+        assert abs(dirx + diry) == 1, f"Moving with Invalid Direction {(dirx, diry)}"
+        self.x += dirx  
+        self.y += diry
+        return True
 
-    def print_position(self):
+    def _turn(self, degrees_to: float) -> None:
+        self.drive_train.rotate(degrees_to)
+        self.heading += degrees_to
+
+    def _scan_and_update_map(self) -> bool:
+        return self.mapp.add_obstacles(
+            self.current_position, self.ultrasonic.scan(65, -65, 15)
+            )
+
+    def print_position(self) -> None:
         x, y, _ = self.current_position
         temp = self.mapp._map[y, x]
         self.mapp._map[y, x] = 2
@@ -318,162 +164,34 @@ class Car:
             copied_map[y, x] = start_marker + i
         print("Path Trace:\n", copied_map)
     
-    def shutdown(self):
+    def shutdown(self) -> None:
         self.drive_train.shutdown()
-
-    def a_star(self, target: tuple[int, int]) -> list[tuple[int, int]]:
-        num_rows = self.mapp.num_rows
-        class Node:
-            def __init__(self, x: int, y:int, prev_node: Union["Node", None] = None) -> None:
-                self.x = x
-                self.y = y
-                self.prev_node = prev_node
-                self.hscore = 0
-                self.gscore = 0
-                self.fscore = 0
-
-            def __eq__(self, onode: "Node") -> bool:
-                return (self.x == onode.x and self.y == onode.y)
-
-            def __gt__(self, other: "Node") -> bool:
-                return (self.fscore > other.fscore)
-            
-            def __lt__(self, other: "Node") -> bool:
-                return not (self.fscore > other.fscore or self.fscore == other.fscore)
-            
-            def calc_scores(self, current_node: "Node", target_node: "Node") -> "Node":
-                self.hscore = self.get_distance(target_node)
-                self.gscore = current_node.gscore + self.get_distance(current_node)
-                self.fscore = self.gscore + self.hscore
-                return self
-
-            def get_distance(self, target_node: "Node") -> int:
-                return (self.x - target_node.x)**2 + (self.y - target_node.y)**2
-
-            @property
-            def key(self) -> int:
-                return self.y * num_rows + self.x
-
-        def find_path(end_node: Node) -> list[tuple[int, int]]:
-            path = [(end_node.x, end_node.y)]
-            current_node = end_node.prev_node
-            while current_node:
-                path.append((current_node.x, current_node.y))
-                current_node = current_node.prev_node
-            path.reverse()
-            return path
-
-        target_node = Node(target[0], target[1])
-        start_x, start_y, _ = self.current_position
-        starting_node = Node(start_x, start_y)
-        
-        # x, y, f, g, h
-        # g = current.g + distance(neighbor, current)
-        # h = distance(current, target)
-        # f = g + h
-        open_list = [starting_node]
-        heapify(open_list)
-        #open_list = PriorityQueue()
-        #open_list.put((0, starting_node))
-        open_set = {starting_node.key : 0.0}
-        closed_set = set()
-        max_steps = 100_000
-        #self.print_position()
-        while len(open_list) > 0 and max_steps > 0:
-        #while open_list.not_empty and max_steps > 0:
-            #priority, current_node = open_list.get(block=False)
-            current_node = heappop(open_list)
-            if current_node == target_node:
-                return find_path(current_node)
-            closed_set.add(current_node.key)
-            for neig_x, neig_y in self.mapp.get_open_neighbors(current_node.x, current_node.y):
-                neigh_node = Node(neig_x, neig_y, current_node).calc_scores(current_node, target_node)
-                if neigh_node.key in closed_set:
-                    continue  
-                existing_gscore = open_set.get(neigh_node.key, None)
-                if existing_gscore and neigh_node.gscore > existing_gscore:
-                        continue
-                #open_list.put((neigh_node.fscore, neigh_node))
-                heappush(open_list, neigh_node)
-                open_set[neigh_node.key] = neigh_node.gscore
-            max_steps -= 1
-        return []
 
     @property
     def current_position(self) -> tuple[int, int, float]:
         return (self.x, self.y, self.heading)
     
-    def _scan_and_update_map(self) -> bool:
-        return self.mapp.add_entries(
-            self.current_position, self.ultrasonic.scan(65, -65, 15)
-            )
-
-    def _turn(self, degrees_to: float) -> None:
-        self.drive_train.rotate(degrees_to)
-        self.heading += degrees_to
-
-def test_map():
-    num_rows = 11
-    num_colums = 11
-    cell_size = 10
-    mapp = Map(num_rows, num_colums, cell_size)
-    # For Servo Degrees
-    #   positive degrees = left 
-    #   negative degrees = right
-
-    # For Map degrees from the perspective of a Numpy Array 
-    #   0 = right
-    #   270 = down
-    #   180 = left
-    #   90 = up
-    LOOK_LEFT = 90 # Servo Look Left
-    LOOK_RIGHT = -90 # Servo Look Right
-    test_entries = [ 
-        ((num_rows // 2, num_colums // 2, 0), (0, 30), (8, 5)), # x, y
-        ((num_rows // 2, num_colums // 2, 0), (LOOK_LEFT, 30), (5, 2)),
-        ((num_rows // 2, num_colums // 2, 0), (LOOK_RIGHT, 30), (5, 8)),
-
-        ((num_rows // 2, num_colums // 2, 270), (LOOK_RIGHT, 30), (2, 5)),
-        ((num_rows // 2, num_colums // 2, 270), (LOOK_LEFT, 30), (8, 5)),
-
-        ((num_rows // 2, num_colums // 2, 180), (LOOK_LEFT, 30), (5, 8)),
-        ((num_rows // 2, num_colums // 2, 180), (LOOK_RIGHT, 30), (5, 2)),
-
-        ((num_rows // 2, num_colums // 2, 90), (LOOK_LEFT, 30), (2, 5)),
-        ((num_rows // 2, num_colums // 2, 90), (LOOK_RIGHT, 30), (8, 5)),
-    ]
-    for entry in test_entries:
-        position, measurement, obj_positions = entry
-        x, y = obj_positions
-        tx, ty = mapp.get_entry_idx(position, measurement)
-        assert (x, y) == (tx, ty), f"Target: {obj_positions} != Actual: {(tx, ty)} -> Car Pos {position} Servo Angle {measurement}"
-
-def test_ultrasonic():
-    us = UltraSonic(servo_offset = 35)
-    for i in range(1, 10):
-        print(us.get_distance_at(0), us.get_distance_at(5))
-
-def test_drive_train():
-    dt = DriveTrain()
-    start_time = time.time()
-    dt.rotate(-45)
-    dt.shutdown()
-    return time.time() - start_time
+    @property
+    def xy_position(self) -> tuple[int, int]:
+        return (self.x, self.y)
+    
+    @property
+    def direction_vector(self) -> tuple[int, int]:
+        return Math.project_point_tuple((0, 0, self.heading), self.mapp.cell_size_in_cm)
 
 if __name__ == "__main__":
     soft_reset()
     time.sleep(0.2)
-    #test_map()
-    #test_ultrasonic()
-    #test_drive_train()
+    #test.test_main()
+    test.test_new_heading()
     try:
         map_size = 21
         car = Car(
             DriveTrain(), 
             UltraSonic(servo_offset = 35), 
-            Map(map_size, map_size, 10)
+            Mapp(map_size, map_size, 10)
             )
-        car.drive((car.x + 4, car.y))
+        #car.drive((car.x + 4, car.y))
         #car._turn(-90)
     finally:
         car.shutdown()
