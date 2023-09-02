@@ -29,7 +29,17 @@ class Mapp:
         return self._map[y, x] != Mapp.OBSTACLE_ID
     
     def get_open_neighbors(self, x, y) -> tuple[int, int]:
-        offsets = ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))
+        offsets = (
+            (x + 1, y), 
+            (x - 1, y), 
+            (x, y + 1), 
+            (x, y - 1),
+            # diagonal neighbors
+            (x + 1, y + 1),
+            (x - 1, y - 1),
+            (x - 1, y + 1),
+            (x + 1, y - 1)
+            )
         for x, y in offsets:
             if self.is_inbounds(x, y) and self.is_open(x, y): # not a block
                 yield (x, y)
@@ -62,6 +72,10 @@ class Mapp:
         x, y = self.get_obstacle_idx(
             xydir_position, angle_and_distance
             )
+        return self.add_obstacle_xy((x, y))
+    
+    def add_obstacle_xy(self, obstacle_xy: tuple[int, int]) -> bool:       
+        x, y = obstacle_xy
         # row = y and column = x
         if self.is_inbounds(x, y) and self.is_open(x, y):
             self._map[y, x] = Mapp.OBSTACLE_ID
@@ -78,6 +92,12 @@ class Mapp:
         for ang_dist in angles_distances:
             found_new_obstacle |= self.add_obstacle(xydir_position, ang_dist)
         return found_new_obstacle
+    
+    def add_obstacles_xy(self, obstacle_xys: list[tuple[int, int]]) -> bool:     
+        added_obstacle = False
+        for xy in obstacle_xys:
+            added_obstacle |= self.add_obstacle_xy(xy)
+        return added_obstacle
     
     def get_obstacles(self) -> list[tuple[int, int]]:
         obstacles = []

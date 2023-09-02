@@ -12,6 +12,7 @@ from Mapp import Mapp
 from Math import Math
 from Pathfinder import Pathfinder
 from Client import Client
+from UltraSonic import UltraSonic
 import test
 
 def soft_reset() -> None:
@@ -21,66 +22,6 @@ def soft_reset() -> None:
     soft_reset_pin.high()
     time.sleep(0.01)
 
-
-class UltraSonic:
-    MAX_DISTANCE = 400 # 400 centimeters is the max range of the sensor
-    ANGLE_RANGE = 180
-    STEP = 18
-
-    def __init__(self, servo_offset: int, timeout: float = 0.01):
-        self.servo_offset = int(servo_offset)
-        self.timeout = timeout
-        self.trig = Pin("D8")
-        self.echo = Pin("D9")
-        self.servo = Servo(PWM("P0"), offset=self.servo_offset)
-        self.current_angle = 0
-        self.max_angle = self.ANGLE_RANGE / 2
-        self.min_angle = -self.ANGLE_RANGE / 2
-
-    def get_distance(self) -> float:
-        self.trig.low()
-        time.sleep(0.01)
-        self.trig.high()
-        time.sleep(0.000015)
-        self.trig.low()
-        pulse_end = 0
-        pulse_start = 0
-        timeout_start = time.time()
-        while self.echo.value() == 0:
-            pulse_start = time.time()
-            if pulse_start - timeout_start > self.timeout:
-                return -1
-        while self.echo.value() == 1:
-            pulse_end = time.time()
-            if pulse_end - timeout_start > self.timeout:
-                return -1
-                #return -2
-        during = pulse_end - pulse_start
-        # 340 = the speed of sound is 343.4 m/s or 0.0343 cm / microsecond
-        dist = round(during * 340 / 2 * 100, 2) # in centimeters
-        if dist > self.MAX_DISTANCE:
-            return -1
-        return dist
-    
-    def get_distance_at(self, degrees_to: float) -> tuple[float, float]:
-        self.servo.set_angle(degrees_to)
-        time.sleep(0.1)
-        self.current_angle = degrees_to
-        return (degrees_to, self.get_distance())
-
-    def scan(self, from_degrees: float, to_degrees: float, num_steps: int) -> list[tuple[float, float]]:
-        half_steps = num_steps // 2        
-        measurements = []
-
-        angle_step = from_degrees // half_steps
-        for current_step in range(0, half_steps):
-            measurements.append(self.get_distance_at(from_degrees - (angle_step * current_step)))
-
-        angle_step = to_degrees // half_steps    
-        for current_step in range(0, half_steps):
-            measurements.append(self.get_distance_at(to_degrees - (angle_step * current_step)))
-
-        return measurements
 
 class Car:
     LEFT_TURN = 90
@@ -104,12 +45,11 @@ class Car:
 
     def drive(self, target: tuple[int, int]):
         self._scan_and_update_map()  
-        path = self.pathfinder.a_star(self.mapp, self.xy_position, target)
+        path = self.pathfinder.a_star(self.mapp, self.current_position, target)
         self.current_path = path
         self.target = target
         # path[0] is the current position of the car
         current_path_idx = 1
-        self.print_path_trace(path)
         try:
             self.send_server_data()
             while self.xy_position != target:
@@ -119,8 +59,7 @@ class Car:
                 should_update_path = self._move_to(path[current_path_idx])
                 current_path_idx += 1
                 if should_update_path:
-                    path = self.pathfinder.a_star(self.mapp, self.xy_position, target)
-                    #self.print_path_trace(path)
+                    path = self.pathfinder.a_star(self.mapp, self.current_position, target)
                     self.current_path = path
                     self.send_server_data()
                     current_path_idx = 1
@@ -129,6 +68,7 @@ class Car:
             raise e
 
     def _move_to(self, target: tuple[int, int]) -> bool:
+        #print(self.current_position, self.target)
         angle_to_turn = Math.calc_turning_angle(self.current_position, target)
         #print(f"Proj: {(dirx, diry)} Targ {(target_x, target_y)} Heading: {self.heading}", angle, cross)
         if abs(angle_to_turn) < 1: # forward
@@ -143,37 +83,19 @@ class Car:
         dirx = round(dirx)
         diry = round(diry)
         # dirx and diry should be either 0, 1, or -1
-        assert abs(dirx + diry) == 1, f"Moving with Invalid Direction {(dirx, diry)}"
+        #assert abs(dirx + diry) == 1, f"Moving with Invalid Direction {(dirx, diry)}"
         self.x += dirx  
         self.y += diry
         return True
 
-    def _turn(self, degrees_to: float) -> None:
-        self.drive_train.rotate(degrees_to)
-        self.heading += degrees_to
-        if self.heading < 0:
-            self.heading = 360 - abs(self.heading)
-        self.heading %= 360
-        print(self.heading)
+    def _turn(self, turning_angle: float) -> None:
+        self.drive_train.rotate(turning_angle)
+        self.heading = Math.calc_new_heading(self.heading, turning_angle)
 
     def _scan_and_update_map(self) -> bool:
         return self.mapp.add_obstacles(
-            self.current_position, self.ultrasonic.scan(65, -65, 7)
+            self.current_position, self.ultrasonic.scan(65, -65, 15)
             )
-
-    def print_position(self) -> None:
-        x, y, _ = self.current_position
-        temp = self.mapp._map[y, x]
-        self.mapp._map[y, x] = 2
-        print(self.mapp._map)
-        self.mapp._map[y, x] = temp
-
-    def print_path_trace(self, path: list[tuple[int, int]]) -> None:
-        copied_map: np.ndarray = deepcopy(self.mapp._map)
-        start_marker = 2
-        for i, (x, y) in enumerate(path):
-            copied_map[y, x] = start_marker + i
-        print("Path Trace:\n", copied_map)
 
     def send_server_data(self):
         if self.has_server:
@@ -207,21 +129,27 @@ class Car:
             flip_y=True
             )
 
-if __name__ == "__main__":
+def car_main(dist_x, dist_y, map_size=51, cell_size=15, servo_offset=35, has_server=False):
     soft_reset()
     time.sleep(0.2)
-    #test.test_main()
-    #test.test_new_heading()
     try:
-        map_size = 51
         car = Car(
             DriveTrain(), 
-            UltraSonic(servo_offset = 35), 
-            Mapp(map_size, map_size, 15),
-            has_server=False
+            UltraSonic(servo_offset = servo_offset), 
+            Mapp(map_size, map_size, cell_size),
+            has_server=has_server
             )
-        car.drive((car.x + 1, car.y))
+        car.drive((car.x + dist_x, car.y + dist_y))
         #car._turn(-90)
     finally:
         car.shutdown()
+
+if __name__ == "__main__":
+    
+    #test.test_main()
+    #test.test_turning_angle()
+    #test.test_calc_new_heading()
+    #test.test_pathfinding()
+    #car_main(has_server=True)
+    car_main(dist_x=1, dist_y=-1)
 

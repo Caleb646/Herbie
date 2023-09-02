@@ -43,13 +43,23 @@ class Math:
         return py_math.degrees(py_math.acos(ab))
 
     @staticmethod
-    def cross(a: tuple[int, int], b: tuple[int, int]) -> float:
-        va = np.array(a)
-        vb = np.array(b)
-        return float(np.cross(va, vb))
-  
+    def normalize(vector: tuple[int, int]) -> np.ndarray:
+        v = np.array(vector)
+        length = py_math.sqrt(np.dot(v, v))
+        return v / length
+
     @staticmethod
-    def calc_turning_angle(origin: tuple[int, int, float], target: tuple[int, int]) -> float:
+    def cross(a: tuple[int, int], b: tuple[int, int]) -> float:
+        va: np.ndarray = Math.normalize(a)
+        vb: np.ndarray = Math.normalize(b)
+        return float(np.cross(va, vb))
+    
+    @staticmethod
+    def calc_turning_angle(
+        origin: tuple[int, int, float], 
+        target: tuple[int, int], 
+        should_round = False
+        ) -> float:
         origin_x, origin_y, origin_angle = origin
         origin_dir_x, origin_dir_y = Math.project_point_tuple(
             (0, 0, origin_angle), 
@@ -57,16 +67,44 @@ class Math:
             flip_y=True,
             should_round=True
             )
-        target_x, target_y = target
-        # move target to origin
-        target_x, target_y = target_x - origin_x, target_y - origin_y
+        target_x, target_y = (target[0] - origin_x, target[1] - origin_y)
         cross_v = -Math.cross((origin_dir_x, origin_dir_y), (target_x, target_y))
-        assert any([round(cross_v) == p for p in [1, 0, -1]]), f"Invalid Cross Product: {cross_v} for Origin: {(origin_dir_x, origin_dir_y)} and Target: {(target_x, target_y)}"
         unsigned_angle = Math.unsigned_angle((origin_dir_x, origin_dir_y), (target_x, target_y))
-        #print(f"Cross: {cross_v} Origin: {(origin_dir_x, origin_dir_y)} Target: {(target_x, target_y)} Unsigned Angle: {unsigned_angle}")
-        if cross_v == 0:
-            return unsigned_angle
-        return unsigned_angle * cross_v
+        info = f"Cross: {cross_v} Origin: {origin} Origin Dir: {(origin_dir_x, origin_dir_y)} Target: {target} Trans Target: {(target_x, target_y)} Unsigned Angle: {unsigned_angle}"
+        #print(info)
+        assert any([round(cross_v) == p for p in [1, 0, -1]]), info
+        if cross_v != 0:
+            unsigned_angle *= round(cross_v)
+        if should_round:
+            unsigned_angle = round(unsigned_angle)
+        return unsigned_angle
+    
+    @staticmethod
+    def calc_new_heading_from_position(
+        origin: tuple[int, int, float], target: tuple[int, int]
+        ) -> float:
+        """
+            current_heading = 0, turning_angle = -90 -> return 270
+            current_heading = 90, turning_angle = -90 -> return 0
+            current_heading = 270, turning_angle = 90 -> return 0
+            current_heading = 270, turning_angle = -90 -> return 180
+        """
+        _, _, current_heading = origin
+        turning_angle = Math.calc_turning_angle(origin, target, should_round=True)
+        return Math.calc_new_heading(current_heading, turning_angle)
+    
+    @staticmethod
+    def calc_new_heading(current_heading: float, turning_angle: float) -> float:
+        """
+            current_heading = 0, turning_angle = -90 -> return 270
+            current_heading = 90, turning_angle = -90 -> return 0
+            current_heading = 270, turning_angle = 90 -> return 0
+            current_heading = 270, turning_angle = -90 -> return 180
+        """
+        current_heading += turning_angle
+        if current_heading < 0:
+            current_heading = 360 - abs(current_heading)
+        return round(current_heading) % 360
 
     @staticmethod
     def closest_to(
