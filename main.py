@@ -50,7 +50,6 @@ class Car:
         self.target = target
         # path[0] is the current position of the car
         current_path_idx = 1
-        self.print_path_trace(path)
         try:
             self.send_server_data()
             while self.xy_position != target:
@@ -61,7 +60,6 @@ class Car:
                 current_path_idx += 1
                 if should_update_path:
                     path = self.pathfinder.a_star(self.mapp, self.current_position, target)
-                    #self.print_path_trace(path)
                     self.current_path = path
                     self.send_server_data()
                     current_path_idx = 1
@@ -70,6 +68,7 @@ class Car:
             raise e
 
     def _move_to(self, target: tuple[int, int]) -> bool:
+        print(self.current_position, self.target)
         angle_to_turn = Math.calc_turning_angle(self.current_position, target)
         #print(f"Proj: {(dirx, diry)} Targ {(target_x, target_y)} Heading: {self.heading}", angle, cross)
         if abs(angle_to_turn) < 1: # forward
@@ -99,22 +98,8 @@ class Car:
 
     def _scan_and_update_map(self) -> bool:
         return self.mapp.add_obstacles(
-            self.current_position, self.ultrasonic.scan(65, -65, 7)
+            self.current_position, self.ultrasonic.scan(65, -65, 15)
             )
-
-    def print_position(self) -> None:
-        x, y, _ = self.current_position
-        temp = self.mapp._map[y, x]
-        self.mapp._map[y, x] = 2
-        print(self.mapp._map)
-        self.mapp._map[y, x] = temp
-
-    def print_path_trace(self, path: list[tuple[int, int]]) -> None:
-        copied_map: np.ndarray = deepcopy(self.mapp._map)
-        start_marker = 2
-        for i, (x, y) in enumerate(path):
-            copied_map[y, x] = start_marker + i
-        print("Path Trace:\n", copied_map)
 
     def send_server_data(self):
         if self.has_server:
@@ -158,7 +143,7 @@ def car_main(map_size=51, cell_size=15, servo_offset=35, has_server=False):
             Mapp(map_size, map_size, cell_size),
             has_server=has_server
             )
-        car.drive((car.x + 1, car.y))
+        car.drive((car.x + 1, car.y - 1))
         #car._turn(-90)
     finally:
         car.shutdown()
@@ -166,7 +151,8 @@ def car_main(map_size=51, cell_size=15, servo_offset=35, has_server=False):
 if __name__ == "__main__":
     
     #test.test_main()
-    #test.test_new_heading()
+    test.test_turning_angle()
     #test.test_pathfinding()
-    car_main()
+    #car_main(has_server=True)
+    #car_main()
 

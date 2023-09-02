@@ -74,7 +74,8 @@ class Pathfinder:
         heapify(open_list)
         open_set = {starting_node.key : 0.0}
         closed_set = set()
-        max_steps = 100_000
+        max_steps_start = 1_000
+        max_steps = max_steps_start
         while len(open_list) > 0 and max_steps > 0:
             current_node = heappop(open_list)
             if current_node == target_node:
@@ -100,4 +101,5 @@ class Pathfinder:
                 heappush(open_list, neigh_node)
                 open_set[neigh_node.key] = neigh_node.gscore
             max_steps -= 1
+        print(f"Failed to find path within maximum steps: {max_steps_start}")
         return []

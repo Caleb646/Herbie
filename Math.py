@@ -53,9 +53,13 @@ class Math:
         va: np.ndarray = Math.normalize(a)
         vb: np.ndarray = Math.normalize(b)
         return float(np.cross(va, vb))
-  
+    
     @staticmethod
-    def calc_turning_angle(origin: tuple[int, int, float], target: tuple[int, int]) -> float:
+    def calc_turning_angle(
+        origin: tuple[int, int, float], 
+        target: tuple[int, int], 
+        should_round = True
+        ) -> float:
         origin_x, origin_y, origin_angle = origin
         origin_dir_x, origin_dir_y = Math.project_point_tuple(
             (0, 0, origin_angle), 
@@ -63,16 +67,17 @@ class Math:
             flip_y=True,
             should_round=True
             )
-        target_x, target_y = target
-        # move target to origin
-        target_x, target_y = target_x - origin_x, target_y - origin_y
+        target_x, target_y = (target[0] - origin_x, target[1] - origin_y)
         cross_v = -Math.cross((origin_dir_x, origin_dir_y), (target_x, target_y))
-        assert any([round(cross_v) == p for p in [1, 0, -1]]), f"Invalid Cross Product: {cross_v} for Origin: {(origin_dir_x, origin_dir_y)} and Target: {(target_x, target_y)}"
         unsigned_angle = Math.unsigned_angle((origin_dir_x, origin_dir_y), (target_x, target_y))
-        #print(f"Cross: {cross_v} Origin: {(origin_dir_x, origin_dir_y)} Target: {(target_x, target_y)} Unsigned Angle: {unsigned_angle}")
-        if cross_v == 0:
-            return unsigned_angle
-        return unsigned_angle * cross_v
+        info = f"Cross: {cross_v} Origin: {origin} Origin Dir: {(origin_dir_x, origin_dir_y)} Target: {target} Trans Target: {(target_x, target_y)} Unsigned Angle: {unsigned_angle}"
+        #print(info)
+        assert any([round(cross_v) == p for p in [1, 0, -1]]), info
+        if cross_v != 0:
+            unsigned_angle *= round(cross_v)
+        if should_round:
+            unsigned_angle = round(unsigned_angle)
+        return unsigned_angle
     
     @staticmethod
     def calc_new_heading(current_heading: float, turning_angle: float) -> float:
