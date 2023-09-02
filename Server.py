@@ -29,6 +29,10 @@ class Server:
                 yield json.loads(data.decode())
             yield {}
 
+    def shutdown(self):
+        self.socket.shutdown(socket.SHUT_RDWR)
+        self.socket.close()
+
 def write_to_map(
         mapp: npt.NDArray[np.uint8], 
         objects: list[tuple[int, int]], 
@@ -69,7 +73,6 @@ if __name__ == "__main__":
 
     #for data in test_data:
     for data in server.run():
-        print(pickle.loads(data["data"]))
         map_size = data.get("map_size", map_size)
         cell_size = data.get("cell_size", cell_size)
         current_path: list[tuple[int, int]] = data.get("current_path", [])
@@ -86,4 +89,5 @@ if __name__ == "__main__":
         write_to_map(car_map, [position], value=(0, 0, 255))
         write_to_map(car_map, [target], value=(255, 255, 255))
 
+    server.shutdown()
     cv2_thread.join()

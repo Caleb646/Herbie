@@ -1,9 +1,7 @@
 from typing import Any
 import socket
 import json
-import pickle
 import time
-import numpy as np
 
 
 class Client:
@@ -12,18 +10,27 @@ class Client:
         self.server_host = server_host
         self.server_port = server_port
         self.socket.settimeout(0.5)
+        self.is_connected = False
+        #self.socket.connect((self.server_host, self.server_port))
+
+    def connect(self) -> "Client":
         self.socket.connect((self.server_host, self.server_port))
+        self.is_connected = True
+        return self
         
     def send(self, data: dict[str, Any]): 
-        encoded_data = json.dumps(data).encode()
-        try:
-            self.socket.sendall(encoded_data)
-        except ConnectionResetError:
-            self.socket.connect((self.server_host, self.server_port))
-            self.socket.sendall(encoded_data)
+        if self.is_connected:
+            encoded_data = json.dumps(data).encode()
+            try:
+                self.socket.sendall(encoded_data)
+            except ConnectionResetError:
+                self.socket.connect((self.server_host, self.server_port))
+                self.socket.sendall(encoded_data)
+        else:
+            print("Error can NOT send data on a socket that has no connection")
 
     def shutdown(self):
-        self.socket.shutdown()
+        self.socket.shutdown(socket.SHUT_RDWR)
         self.socket.close()
 
 
