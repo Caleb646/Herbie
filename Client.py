@@ -6,6 +6,7 @@ import time
 
 class Client:
     CLOSING_MESSAGE = "CLOSING_SOCKET"
+    
     def __init__(self, server_host="192.168.1.35", server_port=8000) -> None:
         self.socket = socket.socket()
         self.server_host = server_host
