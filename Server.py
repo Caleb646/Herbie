@@ -69,7 +69,6 @@ if __name__ == "__main__":
 
     #for data in test_data:
     for data in server.run():
-        print(pickle.loads(data["data"]))
         map_size = data.get("map_size", map_size)
         cell_size = data.get("cell_size", cell_size)
         current_path: list[tuple[int, int]] = data.get("current_path", [])
