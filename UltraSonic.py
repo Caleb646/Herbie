@@ -3,6 +3,7 @@ from picar_4wd.pin import Pin
 from picar_4wd.servo import Servo
 
 from typing import Union, Callable
+import numpy as np
 import time
 
 class UltraSonic:
@@ -51,16 +52,32 @@ class UltraSonic:
         self.current_angle = degrees_to
         return (degrees_to, self.get_distance())
 
-    def scan(self, from_degrees: float, to_degrees: float, num_steps: int) -> list[tuple[float, float]]:
-        half_steps = num_steps // 2        
+    def scan(
+            self, from_degrees: float, to_degrees: float, num_steps: int, samples_per_step: int = 2
+            ) -> list[tuple[float, float]]:
+        half_steps = num_steps // 2 
+        #        
+        step_size = from_degrees // half_steps
+        from_angles = [from_degrees - (i * step_size) for i in range(half_steps)]
+        #
+        step_size = to_degrees // half_steps
+        to_angles = [to_degrees - (i * step_size) for i in range(half_steps)]
+        #
+        all_angles = sorted(from_angles + to_angles + [0])
         measurements = []
-
-        angle_step = from_degrees // half_steps
-        for current_step in range(0, half_steps):
-            measurements.append(self.get_distance_at(from_degrees - (angle_step * current_step)))
-
-        angle_step = to_degrees // half_steps    
-        for current_step in range(0, half_steps):
-            measurements.append(self.get_distance_at(to_degrees - (angle_step * current_step)))
-
+        for angle in all_angles:
+            angle_center, distance_center = self.get_distance_at(angle)
+            samples = [distance_center]
+            sample_size = 20 // samples_per_step
+            for i in range(1, (samples_per_step // 2) + 1):
+                _, d = self.get_distance_at(angle - sample_size * i)
+                samples.append(d)
+            for i in range(1, (samples_per_step // 2) + 1):
+                _, d = self.get_distance_at(angle + sample_size * i)
+                samples.append(d)
+            if samples.count(-1) > len(samples) // 2:
+                print(f"Object with distance samples {samples} and angle: {angle_center} was determined to be noise.")
+            else:
+                filtered_samples = list(filter(lambda dist : dist != -1, samples))
+                measurements.append([angle_center, sum(filtered_samples) / len(filtered_samples)])
         return measurements
