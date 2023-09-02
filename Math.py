@@ -43,9 +43,15 @@ class Math:
         return py_math.degrees(py_math.acos(ab))
 
     @staticmethod
+    def normalize(vector: tuple[int, int]) -> np.ndarray:
+        v = np.array(vector)
+        length = py_math.sqrt(np.dot(v, v))
+        return v / length
+
+    @staticmethod
     def cross(a: tuple[int, int], b: tuple[int, int]) -> float:
-        va = np.array(a)
-        vb = np.array(b)
+        va: np.ndarray = Math.normalize(a)
+        vb: np.ndarray = Math.normalize(b)
         return float(np.cross(va, vb))
   
     @staticmethod
@@ -67,6 +73,19 @@ class Math:
         if cross_v == 0:
             return unsigned_angle
         return unsigned_angle * cross_v
+    
+    @staticmethod
+    def calc_new_heading(current_heading: float, turning_angle: float) -> float:
+        """
+            current_heading = 0, turning_angle = -90 -> return 270
+            current_heading = 90, turning_angle = -90 -> return 0
+            current_heading = 270, turning_angle = 90 -> return 0
+            current_heading = 270, turning_angle = -90 -> return 180
+        """
+        current_heading += turning_angle
+        if current_heading < 0:
+            current_heading = 360 - abs(current_heading)
+        return current_heading % 360
 
     @staticmethod
     def closest_to(

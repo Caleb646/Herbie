@@ -104,7 +104,7 @@ class Car:
 
     def drive(self, target: tuple[int, int]):
         self._scan_and_update_map()  
-        path = self.pathfinder.a_star(self.mapp, self.xy_position, target)
+        path = self.pathfinder.a_star(self.mapp, self.current_position, target)
         self.current_path = path
         self.target = target
         # path[0] is the current position of the car
@@ -119,7 +119,7 @@ class Car:
                 should_update_path = self._move_to(path[current_path_idx])
                 current_path_idx += 1
                 if should_update_path:
-                    path = self.pathfinder.a_star(self.mapp, self.xy_position, target)
+                    path = self.pathfinder.a_star(self.mapp, self.current_position, target)
                     #self.print_path_trace(path)
                     self.current_path = path
                     self.send_server_data()
@@ -143,7 +143,7 @@ class Car:
         dirx = round(dirx)
         diry = round(diry)
         # dirx and diry should be either 0, 1, or -1
-        assert abs(dirx + diry) == 1, f"Moving with Invalid Direction {(dirx, diry)}"
+        #assert abs(dirx + diry) == 1, f"Moving with Invalid Direction {(dirx, diry)}"
         self.x += dirx  
         self.y += diry
         return True
@@ -207,21 +207,25 @@ class Car:
             flip_y=True
             )
 
-if __name__ == "__main__":
+def car_main(map_size=51, cell_size=15, servo_offset=35, has_server=False):
     soft_reset()
     time.sleep(0.2)
-    #test.test_main()
-    #test.test_new_heading()
     try:
-        map_size = 51
         car = Car(
             DriveTrain(), 
-            UltraSonic(servo_offset = 35), 
-            Mapp(map_size, map_size, 15),
-            has_server=False
+            UltraSonic(servo_offset = servo_offset), 
+            Mapp(map_size, map_size, cell_size),
+            has_server=has_server
             )
         car.drive((car.x + 1, car.y))
         #car._turn(-90)
     finally:
         car.shutdown()
+
+if __name__ == "__main__":
+    
+    #test.test_main()
+    #test.test_new_heading()
+    #test.test_pathfinding()
+    car_main()
 

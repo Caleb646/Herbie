@@ -14,8 +14,12 @@ class Client:
         #self.socket.connect((self.server_host, self.server_port))
 
     def connect(self) -> "Client":
-        self.socket.connect((self.server_host, self.server_port))
-        self.is_connected = True
+        try:
+            self.socket.connect((self.server_host, self.server_port))
+            self.is_connected = True
+        except ConnectionError as e:
+            print(f"FAILED to connect to server {(self.server_host, self.server_port)} because: {str(e)}")
+            self.is_connected = False
         return self
         
     def send(self, data: dict[str, Any]): 
@@ -24,14 +28,15 @@ class Client:
             try:
                 self.socket.sendall(encoded_data)
             except ConnectionResetError:
-                self.socket.connect((self.server_host, self.server_port))
+                self.connect()
                 self.socket.sendall(encoded_data)
         else:
             print("Error can NOT send data on a socket that has no connection")
 
     def shutdown(self):
-        self.socket.shutdown(socket.SHUT_RDWR)
-        self.socket.close()
+        if self.is_connected:
+            self.socket.shutdown(socket.SHUT_RDWR)
+            self.socket.close()
 
 
 if __name__ == "__main__":

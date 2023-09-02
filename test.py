@@ -1,10 +1,4 @@
-from picar_4wd.pwm import PWM
-from picar_4wd.pin import Pin
-from picar_4wd.servo import Servo
-
 from typing import Union, Callable
-from copy import deepcopy
-import numpy as np
 import time
 
 from DriveTrain import DriveTrain
@@ -84,12 +78,21 @@ def test_turning_angle():
         new_heading = Math.calc_turning_angle(current_pos, target_xy)
         assert expected_new_heading == new_heading, f"Current: {current_pos} Target: {target_xy} New: {new_heading} != Expected {expected_new_heading}"
 
+
+def test_pathfinding():
+    mapp = Mapp(11, 11, 10)
+    pathfinder = Pathfinder()
+    obstacles = [(1, 1), (6, 5), (7, 5)]
+    mapp.add_obstacles_xy(obstacles)
+    current_position = (mapp.num_columns // 2, mapp.num_rows // 2, 0)
+    target_position = (current_position[0] + 5, current_position[1])
+    path = pathfinder.a_star(mapp, current_position, target_position)
+    expected_path = [(5, 5), (6, 6), (7, 6), (8, 6), (9, 5), (10, 5)]
+    assert path == expected_path, f"Path: {path} != Expected Path: {expected_path}"
+
 def test_drive_train():
     dt = DriveTrain()
     start_time = time.time()
     dt.rotate(-45)
     dt.shutdown()
     return time.time() - start_time
-
-def test_main():
-    test_map()
