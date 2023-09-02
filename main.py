@@ -68,7 +68,7 @@ class Car:
             raise e
 
     def _move_to(self, target: tuple[int, int]) -> bool:
-        print(self.current_position, self.target)
+        #print(self.current_position, self.target)
         angle_to_turn = Math.calc_turning_angle(self.current_position, target)
         #print(f"Proj: {(dirx, diry)} Targ {(target_x, target_y)} Heading: {self.heading}", angle, cross)
         if abs(angle_to_turn) < 1: # forward
@@ -88,13 +88,9 @@ class Car:
         self.y += diry
         return True
 
-    def _turn(self, degrees_to: float) -> None:
-        self.drive_train.rotate(degrees_to)
-        self.heading += degrees_to
-        if self.heading < 0:
-            self.heading = 360 - abs(self.heading)
-        self.heading %= 360
-        print(self.heading)
+    def _turn(self, turning_angle: float) -> None:
+        self.drive_train.rotate(turning_angle)
+        self.heading = Math.calc_new_heading(self.heading, turning_angle)
 
     def _scan_and_update_map(self) -> bool:
         return self.mapp.add_obstacles(
@@ -133,7 +129,7 @@ class Car:
             flip_y=True
             )
 
-def car_main(map_size=51, cell_size=15, servo_offset=35, has_server=False):
+def car_main(dist_x, dist_y, map_size=51, cell_size=15, servo_offset=35, has_server=False):
     soft_reset()
     time.sleep(0.2)
     try:
@@ -143,7 +139,7 @@ def car_main(map_size=51, cell_size=15, servo_offset=35, has_server=False):
             Mapp(map_size, map_size, cell_size),
             has_server=has_server
             )
-        car.drive((car.x + 1, car.y - 1))
+        car.drive((car.x + dist_x, car.y + dist_y))
         #car._turn(-90)
     finally:
         car.shutdown()
@@ -151,8 +147,9 @@ def car_main(map_size=51, cell_size=15, servo_offset=35, has_server=False):
 if __name__ == "__main__":
     
     #test.test_main()
-    test.test_turning_angle()
+    #test.test_turning_angle()
+    #test.test_calc_new_heading()
     #test.test_pathfinding()
     #car_main(has_server=True)
-    #car_main()
+    car_main(dist_x=1, dist_y=-1)
 

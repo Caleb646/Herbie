@@ -58,7 +58,7 @@ class Math:
     def calc_turning_angle(
         origin: tuple[int, int, float], 
         target: tuple[int, int], 
-        should_round = True
+        should_round = False
         ) -> float:
         origin_x, origin_y, origin_angle = origin
         origin_dir_x, origin_dir_y = Math.project_point_tuple(
@@ -80,6 +80,20 @@ class Math:
         return unsigned_angle
     
     @staticmethod
+    def calc_new_heading_from_position(
+        origin: tuple[int, int, float], target: tuple[int, int]
+        ) -> float:
+        """
+            current_heading = 0, turning_angle = -90 -> return 270
+            current_heading = 90, turning_angle = -90 -> return 0
+            current_heading = 270, turning_angle = 90 -> return 0
+            current_heading = 270, turning_angle = -90 -> return 180
+        """
+        _, _, current_heading = origin
+        turning_angle = Math.calc_turning_angle(origin, target, should_round=True)
+        return Math.calc_new_heading(current_heading, turning_angle)
+    
+    @staticmethod
     def calc_new_heading(current_heading: float, turning_angle: float) -> float:
         """
             current_heading = 0, turning_angle = -90 -> return 270
@@ -90,7 +104,7 @@ class Math:
         current_heading += turning_angle
         if current_heading < 0:
             current_heading = 360 - abs(current_heading)
-        return current_heading % 360
+        return round(current_heading) % 360
 
     @staticmethod
     def closest_to(

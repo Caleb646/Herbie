@@ -15,10 +15,15 @@ TURN_HALF_RIGHT = -45
 TURN_ONE_ONEHALF_LEFT = 135
 TURN_ONO_ONEHALF_RIGHT = -135
 
-LOOKING_UP = 90
-LOOKING_DOWN = 270
-LOOKING_RIGHT = 0
-LOOKING_LEFT = 180
+LOOKING_FULL_UP = 90
+LOOKING_FULL_DOWN = 270
+LOOKING_FULL_RIGHT = 0
+LOOKING_FULL_LEFT = 180
+
+LOOKING_HALF_UP_HALF_RIGHT = 45
+LOOKING_HALF_UP_HALF_LEFT = 135 
+LOOKING_HALF_DOWN_HALF_RIGHT = 225
+LOOKING_HALF_DOWN_HALF_LEFT = 315
 
 SERVO_LOOK_LEFT = 90 # Servo Look Left
 SERVO_LOOK_RIGHT = -90 # Servo Look Right
@@ -62,31 +67,31 @@ def test_map():
 def test_turning_angle():
 
     current_and_new = [
-        [(5, 5, LOOKING_RIGHT), (6, 5), 0],
-        [(5, 5, LOOKING_RIGHT), (5, 6), TURN_FULL_RIGHT],
-        [(5, 5, LOOKING_RIGHT), (5, 4), TURN_FULL_LEFT],
-        [(5, 5, LOOKING_RIGHT), (4, 5), 180],
+        [(5, 5, LOOKING_FULL_RIGHT), (6, 5), 0],
+        [(5, 5, LOOKING_FULL_RIGHT), (5, 6), TURN_FULL_RIGHT],
+        [(5, 5, LOOKING_FULL_RIGHT), (5, 4), TURN_FULL_LEFT],
+        [(5, 5, LOOKING_FULL_RIGHT), (4, 5), 180],
 
-        [(5, 5, LOOKING_UP), (5, 6), 180],
-        [(5, 5, LOOKING_UP), (5, 4), 0],
-        [(5, 5, LOOKING_UP), (6, 5), TURN_FULL_RIGHT],
-        [(5, 5, LOOKING_UP), (4, 5), TURN_FULL_LEFT],
+        [(5, 5, LOOKING_FULL_UP), (5, 6), 180],
+        [(5, 5, LOOKING_FULL_UP), (5, 4), 0],
+        [(5, 5, LOOKING_FULL_UP), (6, 5), TURN_FULL_RIGHT],
+        [(5, 5, LOOKING_FULL_UP), (4, 5), TURN_FULL_LEFT],
 
-        [(5, 5, LOOKING_LEFT), (5, 6), TURN_FULL_LEFT],
-        [(5, 5, LOOKING_LEFT), (5, 4), TURN_FULL_RIGHT],
-        [(5, 5, LOOKING_LEFT), (4, 5), 0],
-        [(5, 5, LOOKING_LEFT), (6, 5), 180],
+        [(5, 5, LOOKING_FULL_LEFT), (5, 6), TURN_FULL_LEFT],
+        [(5, 5, LOOKING_FULL_LEFT), (5, 4), TURN_FULL_RIGHT],
+        [(5, 5, LOOKING_FULL_LEFT), (4, 5), 0],
+        [(5, 5, LOOKING_FULL_LEFT), (6, 5), 180],
 
-        [(5, 5, LOOKING_DOWN), (6, 5), TURN_FULL_LEFT],
-        [(5, 5, LOOKING_DOWN), (4, 5), TURN_FULL_RIGHT],
-        [(5, 5, LOOKING_DOWN), (5, 6), 0],
-        [(5, 5, LOOKING_DOWN), (5, 4), 180],
+        [(5, 5, LOOKING_FULL_DOWN), (6, 5), TURN_FULL_LEFT],
+        [(5, 5, LOOKING_FULL_DOWN), (4, 5), TURN_FULL_RIGHT],
+        [(5, 5, LOOKING_FULL_DOWN), (5, 6), 0],
+        [(5, 5, LOOKING_FULL_DOWN), (5, 4), 180],
         
         # 45 degree turns
-        [(5, 5, LOOKING_RIGHT), (6, 6), TURN_HALF_RIGHT],
-        [(5, 5, LOOKING_RIGHT), (4, 4), TURN_ONE_ONEHALF_LEFT],
-        [(5, 5, LOOKING_RIGHT), (4, 6), TURN_ONO_ONEHALF_RIGHT],
-        [(5, 5, LOOKING_RIGHT), (6, 4), TURN_HALF_LEFT],
+        [(5, 5, LOOKING_FULL_RIGHT), (6, 6), TURN_HALF_RIGHT],
+        [(5, 5, LOOKING_FULL_RIGHT), (4, 4), TURN_ONE_ONEHALF_LEFT],
+        [(5, 5, LOOKING_FULL_RIGHT), (4, 6), TURN_ONO_ONEHALF_RIGHT],
+        [(5, 5, LOOKING_FULL_RIGHT), (6, 4), TURN_HALF_LEFT],
     ]
 
     for current_pos, target_xy, expected_new_heading in current_and_new:
@@ -94,14 +99,26 @@ def test_turning_angle():
         assert expected_new_heading == new_heading, f"Current: {current_pos} Target: {target_xy} New: {new_heading} != Expected {expected_new_heading}"
 
 def test_calc_new_heading():
-
     current_new = [
-        (LOOKING_RIGHT, TURN_FULL_RIGHT, LOOKING_DOWN),
-        (LOOKING_RIGHT, TURN_FULL_LEFT, LOOKING_UP),
+        # current, turn angle, expected heading after turning
+        (LOOKING_FULL_RIGHT, TURN_FULL_RIGHT, LOOKING_FULL_DOWN),
+        (LOOKING_FULL_RIGHT, TURN_FULL_LEFT, LOOKING_FULL_UP),
 
-        (LOOKING_RIGHT, TURN_FULL_RIGHT, LOOKING_DOWN),
-        (LOOKING_RIGHT, TURN_FULL_LEFT, LOOKING_UP),
+        (LOOKING_FULL_UP, TURN_FULL_RIGHT, LOOKING_FULL_RIGHT),
+        (LOOKING_FULL_UP, TURN_FULL_LEFT, LOOKING_FULL_LEFT),
+
+        (LOOKING_FULL_LEFT, TURN_FULL_RIGHT, LOOKING_FULL_UP),
+        (LOOKING_FULL_LEFT, TURN_FULL_LEFT, LOOKING_FULL_DOWN),
+
+        (LOOKING_FULL_DOWN, TURN_FULL_RIGHT, LOOKING_FULL_LEFT),
+        (LOOKING_FULL_DOWN, TURN_FULL_LEFT, LOOKING_FULL_RIGHT),
+
+        (LOOKING_FULL_DOWN, TURN_HALF_LEFT, LOOKING_HALF_DOWN_HALF_LEFT),
+        (LOOKING_FULL_DOWN, TURN_HALF_RIGHT, LOOKING_HALF_DOWN_HALF_RIGHT)
     ]
+    for current, turn_angle, expected in current_new:
+        new_heading = Math.calc_new_heading(current, turn_angle)
+        assert expected == new_heading, f"Expected: {expected} != New: {new_heading} Current: {current} Turn Angle: {turn_angle}"
 
 
 def test_pathfinding():
