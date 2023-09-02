@@ -39,7 +39,8 @@ class Pathfinder:
                     ) -> "Node":
                 self.angle_score = abs(Math.calc_turning_angle(
                     (self.x, self.y, self.heading), 
-                    (current_node.x, current_node.y)
+                    (current_node.x, current_node.y),
+                    should_round = True
                     )) / 45
                 self.hscore = self.get_distance(target_node)
                 self.gscore = current_node.gscore + self.get_distance(current_node)
@@ -82,7 +83,7 @@ class Pathfinder:
                 return find_path(current_node)
             closed_set.add(current_node.key)
             for neig_x, neig_y in mapp.get_open_neighbors(current_node.x, current_node.y):
-                neigh_heading = Math.calc_turning_angle(
+                neigh_heading = Math.calc_new_heading_from_position(
                     (current_node.x, current_node.y, current_node.heading), (neig_x, neig_y)
                     )
                 neigh_node = Node(

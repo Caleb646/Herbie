@@ -129,7 +129,7 @@ def test_pathfinding():
     current_position = (mapp.num_columns // 2, mapp.num_rows // 2, 0)
     target_position = (current_position[0] + 5, current_position[1])
     path = pathfinder.a_star(mapp, current_position, target_position)
-    expected_path = [(5, 5), (6, 6), (7, 6), (8, 6), (9, 5), (10, 5)]
+    expected_path = [(5, 5), (6, 6), (7, 6), (8, 6), (9, 6), (10, 5)]
     assert path == expected_path, f"Path: {path} != Expected Path: {expected_path}"
 
 def test_drive_train():

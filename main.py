@@ -151,5 +151,5 @@ if __name__ == "__main__":
     #test.test_calc_new_heading()
     #test.test_pathfinding()
     #car_main(has_server=True)
-    car_main(dist_x=1, dist_y=-1)
+    car_main(dist_x=0, dist_y=0, has_server=True)
 
