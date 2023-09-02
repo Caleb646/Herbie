@@ -1,36 +1,52 @@
 from typing import Any, Iterable
 import socket
 import json
-import pickle
 import cv2
 import numpy as np
 import numpy.typing as npt
-
 import threading
-import pickle
+import select
+import time
 
 
 class Server:
+    CLOSING_MESSAGE = "CLOSING_SOCKET"
     def __init__(self, host="192.168.1.35", port=8000) -> None:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connections: dict[str, socket.socket] = {}
         self.host = host
         self.port = port
 
     def run(self) -> Iterable[dict[str, Any]]:
         self.socket.bind((self.host, self.port))
         self.socket.listen()
-        conn, addr = self.socket.accept()
-        conn.settimeout(20)
-        print(f"Connected to: {addr}")
+        # add self.socket to connections 
+        # so we know when to a connection is waiting to be accepted
+        connections = [self.socket]
+        timeout = 0.1
         while True:
-            data = conn.recv(2048)
-            if data:
-                yield json.loads(data.decode())
+            # select.select returns a subset of ready to ready, write, and exceptional conditions sockets
+            readable, writable, errored = select.select(connections, [], [], timeout)
+            for socket in readable:
+                if socket is self.socket:
+                    client_socket, address = self.socket.accept()
+                    client_socket.setblocking(False)
+                    connections.append(client_socket)
+                    print(f"Incoming connection: {address}")
+                else:
+                    data: bytes = socket.recv(2048)
+                    if data:
+                        decoded_data = data.decode()
+                        if decoded_data == Server.CLOSING_MESSAGE:
+                            print(f"Removing Connection: {socket.getpeername()}")
+                            socket.close()
+                            connections.remove(socket)
+                        else:
+                            yield json.loads(data.decode())
+                    # when a client socket is succesfully shutdown and then closed
+                    # it will send a recieve of 0 bytes. So this connection can be removed
             yield {}
 
     def shutdown(self):
-        self.socket.shutdown(socket.SHUT_RDWR)
         self.socket.close()
 
 def write_to_map(
@@ -43,17 +59,6 @@ def write_to_map(
         if len(obj) == 2:
             x, y = obj
             mapp[y, x] = value
-
-def run_map_window(mapp, default_window_size=500):
-    mapp_window_name = 'Mapp_Panel'
-    cv2.namedWindow(mapp_window_name, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(mapp_window_name, default_window_size, default_window_size)
-    while True:
-        cv2.imshow(mapp_window_name, mapp)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     server = Server()
@@ -68,26 +73,38 @@ if __name__ == "__main__":
         "current_path": [(i, j) for i in range(default_map_size//2) for j in range(default_map_size//2)],
         "obstacle": [(25, 25), (26, 25), (27, 28), (30, 30)]
     }]
-    cv2_thread = threading.Thread(target=run_map_window, args=(car_map, default_map_size))
-    cv2_thread.start()
 
-    #for data in test_data:
-    for data in server.run():
-        map_size = data.get("map_size", map_size)
-        cell_size = data.get("cell_size", cell_size)
-        current_path: list[tuple[int, int]] = data.get("current_path", [])
-        obstacles: list[tuple[int, int]] = data.get("obstacles", [])
-        position: tuple[int, int] = data.get("position", ())
-        heading: float = data.get("heading", -1)
-        target: tuple = data.get("target", ())
+    try:
+        default_window_size = 500
+        mapp_window_name = 'Mapp_Panel'
+        cv2.namedWindow(mapp_window_name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(mapp_window_name, default_window_size, default_window_size)
+        #for data in test_data:
+        for data in server.run():
+            map_size = data.get("map_size", map_size)
+            cell_size = data.get("cell_size", cell_size)
+            current_path: list[tuple[int, int]] = data.get("current_path", [])
+            obstacles: list[tuple[int, int]] = data.get("obstacles", [])
+            position: tuple[int, int] = data.get("position", ())
+            heading: float = data.get("heading", -1)
+            target: tuple = data.get("target", ())
+            if current_path:
+                write_to_map(car_map, previous_path, value=(0, 0, 0))
+                write_to_map(car_map, current_path, value=(255, 0, 0))
+                previous_path = current_path
+            write_to_map(car_map, obstacles, value=(0, 255, 0))
+            write_to_map(car_map, [position], value=(0, 0, 255))
+            write_to_map(car_map, [target], value=(255, 255, 255))
 
-        if current_path:
-            write_to_map(car_map, previous_path, value=(0, 0, 0))
-            write_to_map(car_map, current_path, value=(255, 0, 0))
-            previous_path = current_path
-        write_to_map(car_map, obstacles, value=(0, 255, 0))
-        write_to_map(car_map, [position], value=(0, 0, 255))
-        write_to_map(car_map, [target], value=(255, 255, 255))
-
-    server.shutdown()
-    cv2_thread.join()
+            cv2.imshow(mapp_window_name, car_map)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+     
+    except Exception as e:
+        cv2.destroyAllWindows()
+        server.shutdown()
+        raise e
+    finally:
+        cv2.destroyAllWindows()
+        server.shutdown()
+        
