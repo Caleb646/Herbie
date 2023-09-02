@@ -87,7 +87,7 @@ class Car:
     RIGHT_TURN = -90
     OPPOSITE_TURN = 180
 
-    def __init__(self, drive_train: DriveTrain, ultrasonic: UltraSonic, mapp: Mapp) -> None:
+    def __init__(self, drive_train: DriveTrain, ultrasonic: UltraSonic, mapp: Mapp, has_server: bool = True) -> None:
         self.drive_train = drive_train
         self.ultrasonic = ultrasonic
         self.mapp = mapp
@@ -96,6 +96,9 @@ class Car:
         self.y = self.mapp.num_rows // 2
         self.heading = 0 # degrees
         self.client = Client()
+        self.has_server = has_server
+        if self.has_server:
+            self.client.connect()
         self.current_path = []
         self.target = ()
 
@@ -155,7 +158,7 @@ class Car:
 
     def _scan_and_update_map(self) -> bool:
         return self.mapp.add_obstacles(
-            self.current_position, self.ultrasonic.scan(65, -65, 15)
+            self.current_position, self.ultrasonic.scan(65, -65, 7)
             )
 
     def print_position(self) -> None:
@@ -173,16 +176,17 @@ class Car:
         print("Path Trace:\n", copied_map)
 
     def send_server_data(self):
-        data = {
-            "map_size": self.mapp.num_columns,
-            "cell_size": self.mapp.cell_size_in_cm,
-            "obstacles": self.mapp.get_obstacles(),
-            "position": self.xy_position,
-            "heading" : self.heading,
-            "current_path": self.current_path,
-            "target": self.target
-        }
-        self.client.send(data)
+        if self.has_server:
+            data = {
+                "map_size": self.mapp.num_columns,
+                "cell_size": self.mapp.cell_size_in_cm,
+                "obstacles": self.mapp.get_obstacles(),
+                "position": self.xy_position,
+                "heading" : self.heading,
+                "current_path": self.current_path,
+                "target": self.target
+            }
+            self.client.send(data)
     
     def shutdown(self) -> None:
         self.drive_train.shutdown()
@@ -213,9 +217,10 @@ if __name__ == "__main__":
         car = Car(
             DriveTrain(), 
             UltraSonic(servo_offset = 35), 
-            Mapp(map_size, map_size, 10)
+            Mapp(map_size, map_size, 15),
+            has_server=False
             )
-        car.drive((car.x + 10, car.y))
+        car.drive((car.x + 1, car.y))
         #car._turn(-90)
     finally:
         car.shutdown()
