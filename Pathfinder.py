@@ -37,14 +37,22 @@ class Pathfinder:
             def calc_scores(
                     self, current_node: "Node", target_node: "Node"
                     ) -> "Node":
+                # self.angle_score = abs(Math.calc_turning_angle(
+                #     (self.x, self.y, self.heading), 
+                #     (current_node.x, current_node.y),
+                #     should_round = True
+                #     )) / 45
+                
+                # current_node is the node we are coming from and self is the node
+                # we are potentially moving to.
                 self.angle_score = abs(Math.calc_turning_angle(
-                    (self.x, self.y, self.heading), 
-                    (current_node.x, current_node.y),
+                    (current_node.x, current_node.y, current_node.heading),
+                    (self.x, self.y),
                     should_round = True
                     )) / 45
                 self.hscore = self.get_distance(target_node)
-                self.gscore = current_node.gscore + self.get_distance(current_node)
-                self.fscore = self.gscore + self.hscore + self.angle_score
+                self.gscore = current_node.gscore + self.get_distance(current_node) + self.angle_score
+                self.fscore = self.gscore + self.hscore #+ self.angle_score
                 return self
 
             def get_distance(self, target_node: "Node") -> int:

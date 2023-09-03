@@ -28,7 +28,14 @@ class Car:
     RIGHT_TURN = -90
     OPPOSITE_TURN = 180
 
-    def __init__(self, drive_train: DriveTrain, ultrasonic: UltraSonic, mapp: Mapp, has_server: bool = True) -> None:
+    def __init__(
+            self, 
+            drive_train: DriveTrain, 
+            ultrasonic: UltraSonic, 
+            mapp: Mapp, 
+            has_server: bool = False
+            ) -> None:
+        
         self.drive_train = drive_train
         self.ultrasonic = ultrasonic
         self.mapp = mapp
@@ -70,7 +77,6 @@ class Car:
     def _move_to(self, target: tuple[int, int]) -> bool:
         #print(self.current_position, self.target)
         angle_to_turn = Math.calc_turning_angle(self.current_position, target)
-        #print(f"Proj: {(dirx, diry)} Targ {(target_x, target_y)} Heading: {self.heading}", angle, cross)
         if abs(angle_to_turn) < 1: # forward
             self._move_forward(self.mapp.cell_size_in_cm)
         else:
@@ -82,8 +88,6 @@ class Car:
         dirx, diry = self.get_direction_vector(distance / self.mapp.cell_size_in_cm)
         dirx = round(dirx)
         diry = round(diry)
-        # dirx and diry should be either 0, 1, or -1
-        #assert abs(dirx + diry) == 1, f"Moving with Invalid Direction {(dirx, diry)}"
         self.x += dirx  
         self.y += diry
         return True
@@ -151,8 +155,8 @@ if __name__ == "__main__":
     #test.test_calc_new_heading()
     #test.test_pathfinding()
     #car_main(has_server=True)
-    #car_main(dist_x=0, dist_y=0, cell_size=20, has_server=True)#, has_server=True)
+    car_main(dist_x=10, dist_y=0, cell_size=20)#, has_server=True)#, has_server=True)
 
-    us = UltraSonic(35)
-    us.scan(-65, 65, 10)
+    # us = UltraSonic(35)
+    # us.scan(-65, 65, 10)
 
