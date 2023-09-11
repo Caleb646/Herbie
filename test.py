@@ -1,7 +1,6 @@
 from typing import Union, Callable
 import time
 
-from DriveTrain import DriveTrain
 from Mapp import Mapp
 from Math import Math
 from Pathfinder import Pathfinder
@@ -131,10 +130,16 @@ def test_pathfinding():
     path = pathfinder.a_star(mapp, current_position, target_position)
     expected_path = [(5, 5), (6, 6), (7, 6), (8, 6), (9, 6), (10, 5)]
     assert path == expected_path, f"Path: {path} != Expected Path: {expected_path}"
+    print("All predicted paths matched their corresponding expected paths")
 
 def test_drive_train():
+    from DriveTrain import DriveTrain
     dt = DriveTrain()
     start_time = time.time()
     dt.rotate(-45)
     dt.shutdown()
     return time.time() - start_time
+
+
+if __name__ == "__main__":
+    test_pathfinding()

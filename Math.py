@@ -68,13 +68,13 @@ class Math:
             should_round=True
             )
         target_x, target_y = (target[0] - origin_x, target[1] - origin_y)
-        cross_v = -Math.cross((origin_dir_x, origin_dir_y), (target_x, target_y))
+        cross_v = -round(Math.cross((origin_dir_x, origin_dir_y), (target_x, target_y)))
         unsigned_angle = Math.unsigned_angle((origin_dir_x, origin_dir_y), (target_x, target_y))
         info = f"Cross: {cross_v} Origin: {origin} Origin Dir: {(origin_dir_x, origin_dir_y)} Target: {target} Trans Target: {(target_x, target_y)} Unsigned Angle: {unsigned_angle}"
         #print(info)
-        assert any([round(cross_v) == p for p in [1, 0, -1]]), info
+        assert any([cross_v == p for p in [1, 0, -1]]), info
         if cross_v != 0:
-            unsigned_angle *= round(cross_v)
+            unsigned_angle *= cross_v
         if should_round:
             unsigned_angle = round(unsigned_angle)
         return unsigned_angle
