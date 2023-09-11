@@ -94,7 +94,7 @@ class Car:
 
     def _scan_and_update_map(self) -> bool:
         return self.mapp.add_obstacles(
-            self.current_position, self.ultrasonic.scan(65, -65, 10, samples_per_step=4)
+            self.current_position, self.ultrasonic.scan(10, -10, 5, samples_per_step=2)
             )
 
     def send_server_data(self):
@@ -151,8 +151,8 @@ if __name__ == "__main__":
     #test.test_calc_new_heading()
     #test.test_pathfinding()
     #car_main(has_server=True)
-    #car_main(dist_x=0, dist_y=0, cell_size=20, has_server=True)#, has_server=True)
+    car_main(dist_x=10, dist_y=0, cell_size=25)#, has_server=True)
 
-    us = UltraSonic(35)
-    us.scan(-65, 65, 10)
+    #us = UltraSonic(35)
+    #us.scan(-65, 65, 10)
 
