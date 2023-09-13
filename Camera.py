@@ -16,7 +16,7 @@ class CameraResult:
 
 class Camera:
   def __init__(self, 
-              model: str = "./Models/efficientdet_lite4_model.tflite", 
+              model_path: str = "./Models/efficientdet_lite4_model.tflite", 
               camera_id: int = 0, 
               width: int = 320, 
               height: int = 320
@@ -55,8 +55,9 @@ class Camera:
       yield CameraResult(True, [])
 
 if __name__ == "__main__":
-    #camera_lite3 = Camera(model="./Models/model.tflite", width=320, height=320)
-    camera_lite4 = Camera(model="./Models/efficientdet_lite4_model.tflite", width=640, height=640)
-    for result in camera_lite4.see():
+    #camera_lite3 = Camera(model_path="./Models/model.tflite", width=320, height=320)
+    camera_lite0 = Camera(model_path="./Models/lite0_int8_model.tflite", width=320, height=320)
+    #camera_lite4 = Camera(model_path="./Models/efficientdet_lite4_model.tflite", width=640, height=640)
+    for result in camera_lite0.see():
       print(result)
       time.sleep(1)
