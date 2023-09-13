@@ -1,10 +1,8 @@
 import cv2
 import time
-from typing import Iterable, NamedTuple
+from typing import Iterable, NamedTuple, List
 from dataclasses import dataclass
-from tflite_support.task import core
-from tflite_support.task import processor
-from tflite_support.task import vision
+from tflite_support.task import core, processor, vision
 
 @dataclass(frozen=True)
 class ObjectResult:
@@ -14,11 +12,11 @@ class ObjectResult:
 @dataclass(frozen=True)
 class CameraResult:
   status: bool
-  object_list: list[ObjectResult]
+  object_list: List[ObjectResult]
 
 class Camera:
   def __init__(self, 
-              model_path: str = "model.tflite", 
+              model: str = "./Models/efficientdet_lite4_model.tflite", 
               camera_id: int = 0, 
               width: int = 320, 
               height: int = 320
@@ -57,7 +55,8 @@ class Camera:
       yield CameraResult(True, [])
 
 if __name__ == "__main__":
-    camera = Camera()
-    for result in camera.see():
+    #camera_lite3 = Camera(model="./Models/model.tflite", width=320, height=320)
+    camera_lite4 = Camera(model="./Models/efficientdet_lite4_model.tflite", width=640, height=640)
+    for result in camera_lite4.see():
       print(result)
       time.sleep(1)
