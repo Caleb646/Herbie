@@ -4,7 +4,6 @@ import json
 import cv2
 import numpy as np
 import numpy.typing as npt
-import threading
 import select
 import time
 
@@ -81,13 +80,16 @@ if __name__ == "__main__":
         cv2.resizeWindow(mapp_window_name, default_window_size, default_window_size)
         #for data in test_data:
         for data in server.run():
-            map_size = data.get("map_size", map_size)
+            map_size = data.get("map_size", None)
             cell_size = data.get("cell_size", cell_size)
             current_path: list[tuple[int, int]] = data.get("current_path", [])
             obstacles: list[tuple[int, int]] = data.get("obstacles", [])
             position: tuple[int, int] = data.get("position", ())
             heading: float = data.get("heading", -1)
             target: tuple = data.get("target", ())
+            if map_size and car_map.shape != (map_size, map_size, 3):
+                print(f"Resizing map to: {(map_size, map_size, 3)}")
+                car_map = np.zeros((map_size, map_size, 3))
             if current_path:
                 write_to_map(car_map, previous_path, value=(0, 0, 0))
                 write_to_map(car_map, current_path, value=(255, 0, 0))
