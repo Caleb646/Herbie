@@ -18,12 +18,12 @@ class CameraResult:
 
 class Camera:
   def __init__(self, 
-              model: str = "model.tflite", 
+              model_path: str = "model.tflite", 
               camera_id: int = 0, 
               width: int = 320, 
               height: int = 320
           ):
-    base_options = core.BaseOptions(file_name=model)
+    base_options = core.BaseOptions(file_name=model_path)
     detection_options = processor.DetectionOptions(
       max_results=3, score_threshold=0.3
       )
