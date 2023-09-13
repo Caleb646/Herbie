@@ -87,6 +87,7 @@ if __name__ == "__main__":
             position: tuple[int, int] = data.get("position", ())
             heading: float = data.get("heading", -1)
             target: tuple = data.get("target", ())
+            # resize car map if dimensions are given
             if map_size and car_map.shape != (map_size, map_size, 3):
                 print(f"Resizing map to: {(map_size, map_size, 3)}")
                 car_map = np.zeros((map_size, map_size, 3))
