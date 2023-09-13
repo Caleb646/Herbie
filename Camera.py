@@ -1,6 +1,6 @@
 import cv2
 import time
-from typing import Iterable, NamedTuple, List
+from typing import Iterable, NamedTuple, List, Union
 from dataclasses import dataclass
 from tflite_support.task import core, processor, vision
 
@@ -13,6 +13,14 @@ class ObjectResult:
 class CameraResult:
   status: bool
   object_list: List[ObjectResult]
+
+  def has_object(self, name: str) -> Union[float, int]:
+    # its possible that the object shows up in the object_list more than once
+    return max(
+      filter(lambda obj : obj.name == name, self.object_list), 
+      key=lambda obj : obj.score, 
+      default = -1
+    )
 
 class Camera:
   def __init__(self, 
