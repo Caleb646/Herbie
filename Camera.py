@@ -21,7 +21,9 @@ class Camera:
               width: int = 320, 
               height: int = 320
           ):
-    base_options = core.BaseOptions(file_name=model_path)
+    base_options = core.BaseOptions(
+      file_name=model_path, num_threads=2
+      )
     detection_options = processor.DetectionOptions(
       max_results=3, score_threshold=0.3
       )
@@ -60,4 +62,4 @@ if __name__ == "__main__":
     #camera_lite4 = Camera(model_path="./Models/efficientdet_lite4_model.tflite", width=640, height=640)
     for result in camera_lite0.see():
       print(result)
-      time.sleep(1)
+      #time.sleep(1)
