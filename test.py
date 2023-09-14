@@ -142,4 +142,7 @@ def test_drive_train():
 
 
 if __name__ == "__main__":
+    test_calc_new_heading()
+    test_map()
+    test_turning_angle()
     test_pathfinding()

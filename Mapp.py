@@ -103,7 +103,7 @@ class Mapp:
         obstacles = []
         for y in range(self.num_rows):
             for x in range(self.num_columns):
-                if not self.is_open(y, x):
+                if not self.is_open(x, y):
                     obstacles.append((x, y))
         return obstacles
 
