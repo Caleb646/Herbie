@@ -2,7 +2,7 @@ from picar_4wd.pwm import PWM
 from picar_4wd.pin import Pin
 from picar_4wd.servo import Servo
 
-from typing import Union, Callable
+from typing import Union, Callable, Iterable
 from copy import deepcopy
 import numpy as np
 import time
@@ -13,6 +13,7 @@ from Math import Math
 from Pathfinder import Pathfinder
 from Client import Client
 from UltraSonic import UltraSonic
+from Camera import Camera, CameraResult
 import test
 
 def soft_reset() -> None:
@@ -44,6 +45,7 @@ class Car:
         self.y = self.mapp.num_rows // 2
         self.heading = 0 # degrees
         self.client = Client()
+        self.camera = Camera()
         self.has_server = has_server
         if self.has_server:
             self.client.connect()
@@ -57,16 +59,26 @@ class Car:
         self.target = target
         # path[0] is the current position of the car
         current_path_idx = 1
+        camera_gen: Iterable[CameraResult] = self.camera.see()
+        found = False
         try:
+            #print(path)
             self.send_server_data()
             while self.xy_position != target:
-                if current_path_idx > len(path):
+                time.sleep(0.3)
+                camera_results = [next(camera_gen).has_object("stop sign") > 0.5 for _ in range(5)]
+                if sum(camera_results) > 1 and not found:
+                    print("Found stop sign")
+                    found = True
+                    time.sleep(3.0)
+                if current_path_idx > len(path) - 1:
                     print(f"Invalid Path Idx: {current_path_idx} and Map:\n {self.mapp._map}")
                     break           
                 should_update_path = self._move_to(path[current_path_idx])
                 current_path_idx += 1
                 if should_update_path:
                     path = self.pathfinder.a_star(self.mapp, self.current_position, target)
+                    print(path)
                     self.current_path = path
                     self.send_server_data()
                     current_path_idx = 1
@@ -77,10 +89,12 @@ class Car:
     def _move_to(self, target: tuple[int, int]) -> bool:
         #print(self.current_position, self.target)
         angle_to_turn = Math.calc_turning_angle(self.current_position, target)
+        print(self.current_position, target, angle_to_turn)
         if abs(angle_to_turn) < 1: # forward
             self._move_forward(self.mapp.cell_size_in_cm)
         else:
             self._turn(angle_to_turn)
+            self._move_forward(self.mapp.cell_size_in_cm)
         return self._scan_and_update_map()
 
     def _move_forward(self, distance) -> bool:
@@ -97,8 +111,11 @@ class Car:
         self.heading = Math.calc_new_heading(self.heading, turning_angle)
 
     def _scan_and_update_map(self) -> bool:
+        # return self.mapp.add_obstacles(
+        #     self.current_position, self.ultrasonic.scan(2, -2, 1, samples_per_step=2)
+        #     )
         return self.mapp.add_obstacles(
-            self.current_position, self.ultrasonic.scan(10, -10, 5, samples_per_step=2)
+            self.current_position, [self.ultrasonic.get_distance_at(0)]
             )
 
     def send_server_data(self):
@@ -155,7 +172,7 @@ if __name__ == "__main__":
     #test.test_calc_new_heading()
     #test.test_pathfinding()
     #car_main(has_server=True)
-    car_main(dist_x=10, dist_y=0, cell_size=25)#, has_server=True)
+    car_main(dist_x=10, dist_y=0, cell_size=25, has_server=True)
 
     #us = UltraSonic(35)
     #us.scan(-65, 65, 10)

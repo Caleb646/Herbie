@@ -76,7 +76,8 @@ class UltraSonic:
                 _, d = self.get_distance_at(angle + sample_size * i)
                 samples.append(d)
             if samples.count(-1) > len(samples) // 2:
-                print(f"Object with distance samples {samples} and angle: {angle_center} was determined to be noise.")
+                continue
+                #print(f"Object with distance samples {samples} and angle: {angle_center} was determined to be noise.")
             else:
                 filtered_samples = list(filter(lambda dist : dist != -1, samples))
                 measurements.append([angle_center, sum(filtered_samples) / len(filtered_samples)])

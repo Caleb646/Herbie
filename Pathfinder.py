@@ -51,8 +51,8 @@ class Pathfinder:
                     should_round = True
                     )) / 45
                 self.hscore = self.get_distance(target_node)
-                self.gscore = current_node.gscore + self.get_distance(current_node) + self.angle_score
-                self.fscore = self.gscore + self.hscore #+ self.angle_score
+                self.gscore = current_node.gscore + self.get_distance(current_node) #+ self.angle_score
+                self.fscore = self.gscore + self.hscore + self.angle_score
                 return self
 
             def get_distance(self, target_node: "Node") -> int:

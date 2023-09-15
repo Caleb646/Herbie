@@ -14,17 +14,17 @@ class CameraResult:
   status: bool
   object_list: List[ObjectResult]
 
-  def has_object(self, name: str) -> Union[float, int]:
+  def has_object(self, name: str) -> float:
     # its possible that the object shows up in the object_list more than once
     return max(
       filter(lambda obj : obj.name == name, self.object_list), 
       key=lambda obj : obj.score, 
-      default = -1
-    )
+      default = ObjectResult(0.0, "invalid_object")
+    ).score
 
 class Camera:
   def __init__(self, 
-              model_path: str = "./Models/efficientdet_lite4_model.tflite", 
+              model_path: str = "./Models/lite0_int8_model.tflite", 
               camera_id: int = 0, 
               width: int = 320, 
               height: int = 320
@@ -60,7 +60,7 @@ class Camera:
         object_list = []
         for detection in detection_result.detections:
           for category in detection.categories:
-            object_list.append((category.score, category.category_name))
+            object_list.append(ObjectResult(category.score, category.category_name))
         yield CameraResult(True, object_list)
       yield CameraResult(True, [])
 
@@ -68,6 +68,10 @@ if __name__ == "__main__":
     #camera_lite3 = Camera(model_path="./Models/model.tflite", width=320, height=320)
     camera_lite0 = Camera(model_path="./Models/lite0_int8_model.tflite", width=320, height=320)
     #camera_lite4 = Camera(model_path="./Models/efficientdet_lite4_model.tflite", width=640, height=640)
+    #camera_gen = camera_lite0.see()
+    #print(camera_gen)
+    #print(next(camera_gen))
+    #print(next(camera_gen))
     for result in camera_lite0.see():
       print(result)
-      #time.sleep(1)
+      time.sleep(1)
