@@ -10,12 +10,13 @@ import time
 
 class Server:
     CLOSING_MESSAGE = "CLOSING_SOCKET"
-    def __init__(self, host="192.168.1.35", port=8000) -> None:
+    def __init__(self, host=socket.gethostbyname(socket.gethostname()), port=8000) -> None:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.host = host
         self.port = port
 
     def run(self) -> Iterable[dict[str, Any]]:
+        print(f"Binding host at IP address: {self.host} and Port: {self.port}")
         self.socket.bind((self.host, self.port))
         self.socket.listen()
         # add self.socket to connections 
@@ -39,11 +40,12 @@ class Server:
                             print(f"Removing Connection: {socket.getpeername()}")
                             socket.close()
                             connections.remove(socket)
+                            yield True, {}
                         else:
-                            yield json.loads(data.decode())
+                            yield False, json.loads(data.decode())
                     # when a client socket is succesfully shutdown and then closed
                     # it will send a recieve of 0 bytes. So this connection can be removed
-            yield {}
+            yield False, {}
 
     def shutdown(self):
         self.socket.close()
@@ -79,7 +81,7 @@ if __name__ == "__main__":
         cv2.namedWindow(mapp_window_name, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(mapp_window_name, default_window_size, default_window_size)
         #for data in test_data:
-        for data in server.run():
+        for connection_ended, data in server.run():
             map_size = data.get("map_size", None)
             cell_size = data.get("cell_size", cell_size)
             current_path: list[tuple[int, int]] = data.get("current_path", [])
@@ -87,6 +89,8 @@ if __name__ == "__main__":
             position: tuple[int, int] = data.get("position", ())
             heading: float = data.get("heading", -1)
             target: tuple = data.get("target", ())
+            if connection_ended:
+                car_map = np.zeros(car_map.shape)
             # resize car map if dimensions are given
             if map_size and car_map.shape != (map_size, map_size, 3):
                 print(f"Resizing map to: {(map_size, map_size, 3)}")
