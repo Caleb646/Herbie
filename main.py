@@ -65,8 +65,8 @@ class Car:
             #print(path)
             self.send_server_data()
             while self.xy_position != target:
-                time.sleep(0.3)
-                camera_results = [next(camera_gen).has_object("stop sign") > 0.5 for _ in range(5)]
+                time.sleep(0.1)
+                camera_results = [next(camera_gen).has_object("stop sign") > 0.5 for _ in range(2)]
                 if sum(camera_results) > 1 and not found:
                     print("Found stop sign")
                     found = True
@@ -172,7 +172,8 @@ if __name__ == "__main__":
     #test.test_calc_new_heading()
     #test.test_pathfinding()
     #car_main(has_server=True)
-    car_main(dist_x=10, dist_y=0, cell_size=25, has_server=True)
+    car_main(dist_x=6, dist_y=3, cell_size=25, has_server=True)
+    #car_main(dist_x=10, dist_y=0, cell_size=25, has_server=True)
 
     #us = UltraSonic(35)
     #us.scan(-65, 65, 10)

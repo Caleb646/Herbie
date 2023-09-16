@@ -56,22 +56,43 @@ class Camera:
       rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
       input_tensor = vision.TensorImage.create_from_array(rgb_image)
       detection_result = self.detector.detect(input_tensor)
+      object_list = []
       if detection_result:
-        object_list = []
         for detection in detection_result.detections:
           for category in detection.categories:
             object_list.append(ObjectResult(category.score, category.category_name))
-        yield CameraResult(True, object_list)
-      yield CameraResult(True, [])
+      yield CameraResult(True, object_list)
+
+def test_camera_fps(
+    total_test_time: float,
+    model_path="./Models/lite0_int8_model.tflite",
+    width = 320,
+    height = 320
+    ):
+  camera = Camera(model_path=model_path, width=width, height=height)
+  camera_gen = camera.see()
+  current_elasped = 0.0
+  max_steps = 1_000
+  steps_taken = 0
+  while total_test_time > current_elasped and steps_taken < max_steps:
+    start = time.time()
+    result = next(camera_gen)
+    steps_taken += 1
+    current_elasped += time.time() - start
+  if steps_taken >= max_steps:
+    print(f"Hit Max Available Steps: {max_steps} with given time: {total_test_time}")
+  print(f"Avg FPS: {steps_taken / total_test_time}")
+
 
 if __name__ == "__main__":
+  test_camera_fps(total_test_time=5.0)
     #camera_lite3 = Camera(model_path="./Models/model.tflite", width=320, height=320)
-    camera_lite0 = Camera(model_path="./Models/lite0_int8_model.tflite", width=320, height=320)
+    # camera_lite0 = Camera(model_path="./Models/lite0_int8_model.tflite", width=320, height=320)
     #camera_lite4 = Camera(model_path="./Models/efficientdet_lite4_model.tflite", width=640, height=640)
     #camera_gen = camera_lite0.see()
     #print(camera_gen)
     #print(next(camera_gen))
     #print(next(camera_gen))
-    for result in camera_lite0.see():
-      print(result)
-      time.sleep(1)
+    # for result in camera_lite0.see():
+    #   print(result)
+    #   time.sleep(1)
