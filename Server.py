@@ -1,3 +1,4 @@
+import os
 from typing import Any, Iterable
 import socket
 import json
@@ -50,6 +51,18 @@ class Server:
     def shutdown(self):
         self.socket.close()
 
+def get_local_time() -> str:
+    return time.strftime('%H:%M:%S', time.localtime())
+
+def save_map(
+        mapp: npt.NDArray[np.uint8], 
+        dir_="./Saved_Maps/", 
+        filename=f"Map_{get_local_time()}.jpeg"
+        ) -> None:
+    if not os.path.isdir(dir_):
+        os.mkdir(dir_)
+    cv2.imwrite(os.path.join(dir_, filename))
+
 def write_to_map(
         mapp: npt.NDArray[np.uint8], 
         objects: list[tuple[int, int]], 
@@ -90,6 +103,10 @@ if __name__ == "__main__":
             heading: float = data.get("heading", -1)
             target: tuple = data.get("target", ())
             if connection_ended:
+                save_map(
+                    car_map, 
+                    filename=f"Target:{target}-Cellsize:{cell_size}-{get_local_time()}.jpeg"
+                    )
                 car_map = np.zeros(car_map.shape)
             # resize car map if dimensions are given
             if map_size and car_map.shape != (map_size, map_size, 3):
