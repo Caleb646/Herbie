@@ -3,14 +3,16 @@ from picar_4wd.pin import Pin
 from picar_4wd.motor import Motor
 from picar_4wd.speed import Speed
 
-from typing import Union, Callable, NoReturn
+from Base import BaseDriveTrain
+
+from typing import Union, Callable
 import time
 import math
 
 
 def block_for(
         time_to_block, starting_speed, sample_speed_func, step=0.01, max_steps=1000
-        ) -> NoReturn:
+        ) -> None:
     num_steps = time_to_block / step
     while num_steps > 0 and max_steps > 0: 
         time.sleep(step)
@@ -21,7 +23,7 @@ def block_for(
         num_steps += missed_step - 1
         max_steps -= 1
 
-class DriveTrain:
+class DriveTrain(BaseDriveTrain):
     def __init__(self):
         self.left_front = Motor(PWM("P13"), Pin("D4"), is_reversed=False) # motor 1
         self.right_front = Motor(PWM("P12"), Pin("D5"), is_reversed=False) # motor 2

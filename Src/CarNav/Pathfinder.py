@@ -1,15 +1,15 @@
-from typing import Union
+from typing import Union, List, Tuple
 from heapq import heapify, heappush, heappop
 
 from Mapp import Mapp
-from Math import Math
+from CMath import Math, Position
 
 class Pathfinder:
 
     @staticmethod
     def a_star(
-            mapp: Mapp, starting: tuple[int, int, float], target: tuple[int, int]
-            ) -> list[tuple[int, int]]:
+            mapp: Mapp, starting: Position, target: Position
+            ) -> List[Position]:
         
         num_rows = mapp.num_rows
         class Node:
@@ -25,8 +25,8 @@ class Pathfinder:
                 self.gscore = 0
                 self.fscore = 0
 
-            def __eq__(self, onode: "Node") -> bool:
-                return (self.x == onode.x and self.y == onode.y)
+            def __eq__(self, other: "Node") -> bool:
+                return (self.x == other.x and self.y == other.y)
 
             def __gt__(self, other: "Node") -> bool:
                 return (self.fscore > other.fscore)
@@ -36,18 +36,12 @@ class Pathfinder:
             
             def calc_scores(
                     self, current_node: "Node", target_node: "Node"
-                    ) -> "Node":
-                # self.angle_score = abs(Math.calc_turning_angle(
-                #     (self.x, self.y, self.heading), 
-                #     (current_node.x, current_node.y),
-                #     should_round = True
-                #     )) / 45
-                
+                    ) -> "Node":             
                 # current_node is the node we are coming from and self is the node
                 # we are potentially moving to.
                 self.angle_score = abs(Math.calc_turning_angle(
-                    (current_node.x, current_node.y, current_node.heading),
-                    (self.x, self.y),
+                    Position(current_node.x, current_node.y, current_node.heading),
+                    Position(self.x, self.y),
                     should_round = True
                     )) / 45
                 self.hscore = self.get_distance(target_node)
@@ -60,21 +54,20 @@ class Pathfinder:
 
             @property
             def key(self) -> int:
-                return self.y * num_rows + self.x + self.heading
+                return int(float(self.y) * num_rows + float(self.x) + self.heading)
 
-        def find_path(end_node: Node) -> list[tuple[int, int]]:
-            path = [(end_node.x, end_node.y)]
+        def find_path(end_node: Node) -> List[Position]:
+            path = [Position(end_node.x, end_node.y)]
             current_node = end_node.prev_node
             while current_node:
-                path.append((current_node.x, current_node.y))
+                path.append(Position(current_node.x, current_node.y))
                 current_node = current_node.prev_node
             path.reverse()
             return path
 
-        target_node = Node(target[0], target[1])
+        target_node = Node(int(target.x), int(target.y)) 
         start_x, start_y, start_heading = starting
-        starting_node = Node(start_x, start_y, start_heading)
-        
+        starting_node = Node(int(start_x), int(start_y), start_heading) 
         # x, y, f, g, h
         # g = current.g + distance(neighbor, current)
         # h = distance(current, target)
@@ -92,11 +85,12 @@ class Pathfinder:
             closed_set.add(current_node.key)
             for neig_x, neig_y in mapp.get_open_neighbors(current_node.x, current_node.y):
                 neigh_heading = Math.calc_new_heading_from_position(
-                    (current_node.x, current_node.y, current_node.heading), (neig_x, neig_y)
+                    Position(current_node.x, current_node.y, current_node.heading), 
+                    Position(neig_x, neig_y)
                     )
                 neigh_node = Node(
-                    neig_x, 
-                    neig_y, 
+                    int(neig_x),
+                    int(neig_y),
                     neigh_heading,
                     current_node    
                     ).calc_scores(current_node, target_node)
@@ -106,7 +100,6 @@ class Pathfinder:
                 existing_gscore = open_set.get(neigh_node.key, None)
                 if existing_gscore and neigh_node.gscore > existing_gscore:
                         continue
-                #open_list.put((neigh_node.fscore, neigh_node))
                 heappush(open_list, neigh_node)
                 open_set[neigh_node.key] = neigh_node.gscore
             max_steps -= 1

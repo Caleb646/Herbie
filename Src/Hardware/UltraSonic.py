@@ -2,11 +2,13 @@ from picar_4wd.pwm import PWM
 from picar_4wd.pin import Pin
 from picar_4wd.servo import Servo
 
+from Base import BaseSensor
+
 from typing import Union, Callable
 import numpy as np
 import time
 
-class UltraSonic:
+class UltraSonic(BaseSensor):
     MAX_DISTANCE = 400 # 400 centimeters is the max range of the sensor
     ANGLE_RANGE = 180
     STEP = 18

@@ -1,5 +1,6 @@
+from typing import List, Tuple, Union, Iterable
 import numpy as np
-from Math import Math
+from CMath import Math, Position
 
 class Mapp:
     OBSTACLE_NOTFOUND = -1
@@ -28,8 +29,8 @@ class Mapp:
     def is_open(self, x: int, y: int) -> bool:
         return self._map[y, x] != Mapp.OBSTACLE_ID
     
-    def get_open_neighbors(self, x, y) -> tuple[int, int]:
-        offsets = (
+    def get_open_neighbors(self, x, y) -> Iterable[Position]:
+        offsets: List[Tuple[int, int]] = [
             (x + 1, y), 
             (x - 1, y), 
             (x, y + 1), 
@@ -39,40 +40,37 @@ class Mapp:
             (x - 1, y - 1),
             (x - 1, y + 1),
             (x + 1, y - 1)
-            )
+        ]
         for x, y in offsets:
             if self.is_inbounds(x, y) and self.is_open(x, y): # not a block
-                yield (x, y)
+                yield Position(x, y)
 
     def get_obstacle_idx(
             self, 
-            xydir_position: tuple[int, int, float], 
+            car_position: Position, 
             angle_and_distance: tuple[float, float]
-            ) -> tuple[int, int]:
+            ) -> Position:
         
-        x, y, car_angle = xydir_position 
         ultra_sonic_angle, raw_distance_in_cm = angle_and_distance
         if raw_distance_in_cm == Mapp.OBSTACLE_NOTFOUND: # -1 = object wasnt found
-            return (-1, -1)
-        return Math.project_point_xy(
-            x, 
-            y, 
-            car_angle + ultra_sonic_angle, 
-            raw_distance_in_cm / self.cell_size_in_cm,
-            flip_y = True,
-            should_round = True
-            )
+            return Position(-1, -1)
+        proj_position = Math.project_position(
+            car_position.clone(angle=car_position.angle + ultra_sonic_angle),
+            raw_distance_in_cm / float(self.cell_size_in_cm),
+            flip_y = True
+        ).xy_round()
+        return proj_position
     
     def add_obstacle(
             self, 
-            xydir_position: tuple[int, int, float], 
+            car_position: Position, 
             angle_and_distance: tuple[float, float]
             ) -> bool:
         
-        x, y = self.get_obstacle_idx(
-            xydir_position, angle_and_distance
+        map_position = self.get_obstacle_idx(
+            car_position, angle_and_distance
             )
-        return self.add_obstacle_xy((x, y))
+        return self.add_obstacle_xy(map_position.xy_tuple()) # type: ignore
     
     def add_obstacle_xy(self, obstacle_xy: tuple[int, int]) -> bool:       
         x, y = obstacle_xy
@@ -84,13 +82,13 @@ class Mapp:
 
     def add_obstacles(
             self, 
-            xydir_position: tuple[int, int, float], 
+            car_position: Position, 
             angles_distances: list[tuple[float, float]]
             ) -> bool:
         
         found_new_obstacle = False
         for ang_dist in angles_distances:
-            found_new_obstacle |= self.add_obstacle(xydir_position, ang_dist)
+            found_new_obstacle |= self.add_obstacle(car_position, ang_dist)
         return found_new_obstacle
     
     def add_obstacles_xy(self, obstacle_xys: list[tuple[int, int]]) -> bool:     
@@ -106,6 +104,3 @@ class Mapp:
                 if not self.is_open(x, y):
                     obstacles.append((x, y))
         return obstacles
-
-    def print_map(self) -> None:
-        print(self._map)
