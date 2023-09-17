@@ -1,8 +1,8 @@
 from typing import Union, List, Tuple
 from heapq import heapify, heappush, heappop
 
-from Mapp import Mapp
-from CMath import Math, Position
+from Src.CarNav.Mapp import Mapp
+from Src.CMath.api import Math, Position
 
 class Pathfinder:
 
@@ -14,7 +14,7 @@ class Pathfinder:
         num_rows = mapp.num_rows
         class Node:
             def __init__(
-                    self, x: int, y:int, heading: float = 0, prev_node: Union["Node", None] = None
+                    self, x: int, y: int, heading: float = 0, prev_node: Union["Node", None] = None
                     ) -> None:
                 self.x = x
                 self.y = y
@@ -45,8 +45,8 @@ class Pathfinder:
                     should_round = True
                     )) / 45
                 self.hscore = self.get_distance(target_node)
-                self.gscore = current_node.gscore + self.get_distance(current_node) #+ self.angle_score
-                self.fscore = self.gscore + self.hscore + self.angle_score
+                self.gscore = current_node.gscore + self.get_distance(current_node) + self.angle_score
+                self.fscore = self.gscore + self.hscore #+ self.angle_score
                 return self
 
             def get_distance(self, target_node: "Node") -> int:
@@ -83,14 +83,14 @@ class Pathfinder:
             if current_node == target_node:
                 return find_path(current_node)
             closed_set.add(current_node.key)
-            for neig_x, neig_y in mapp.get_open_neighbors(current_node.x, current_node.y):
+            for neigh_pos in mapp.get_open_neighbors(current_node.x, current_node.y):
                 neigh_heading = Math.calc_new_heading_from_position(
                     Position(current_node.x, current_node.y, current_node.heading), 
-                    Position(neig_x, neig_y)
+                    neigh_pos
                     )
                 neigh_node = Node(
-                    int(neig_x),
-                    int(neig_y),
+                    int(neigh_pos.x),
+                    int(neigh_pos.y),
                     neigh_heading,
                     current_node    
                     ).calc_scores(current_node, target_node)

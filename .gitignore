@@ -2,3 +2,5 @@
 **__pycache__**
 **Data**
 **Logs**
+**.pytest_cache**
+**.vscode**

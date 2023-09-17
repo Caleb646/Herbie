@@ -17,7 +17,7 @@ class Server:
         self.host = host
         self.port = port
 
-    def run(self) -> Iterable[dict[str, Any]]:
+    def run(self) -> Iterable[Tuple[bool, dict[str, Any]]]:
         print(f"Binding host at IP address: {self.host} and Port: {self.port}")
         self.socket.bind((self.host, self.port))
         self.socket.listen()
@@ -76,8 +76,8 @@ class State:
         filepath_without_ext = os.path.join(main_sub_dir, f"{filename}_{self.current_step}")
         if not os.path.isdir(main_sub_dir):
             os.mkdir(main_sub_dir)
-        resized = cv2.resize(
-            mapp, (new_img_width, new_img_height), interpolation = cv2.INTER_NEAREST
+        resized = cv2.resize( # type: ignore
+            mapp, (new_img_width, new_img_height), interpolation = cv2.INTER_NEAREST # type: ignore
             )
         log_file_path =f"{filepath_without_ext}.txt"
         map_path = f"{filepath_without_ext}.jpeg"
@@ -87,7 +87,7 @@ class State:
                 lines.append(f"\n{name} -> {str(item)}")
             f.writelines(lines)
         self.current_step += 1
-        return cv2.imwrite(map_path, resized)
+        return cv2.imwrite(map_path, resized) # type: ignore
     
     def reset(self) -> None:
         self.current_step = 0
@@ -124,8 +124,8 @@ def car_server_main():
         default_window_size = 500
         mapp_window_name = 'Mapp_Panel'
         current_state = State()
-        cv2.namedWindow(mapp_window_name, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(mapp_window_name, default_window_size, default_window_size)
+        cv2.namedWindow(mapp_window_name, cv2.WINDOW_NORMAL) # type: ignore
+        cv2.resizeWindow(mapp_window_name, default_window_size, default_window_size) # type: ignore
         for connection_ended, data in server.run():
             map_size = data.get("map_size", None)
             cell_size = data.get("cell_size", cell_size)
@@ -143,36 +143,36 @@ def car_server_main():
                 print(f"Resizing map to: {(map_size, map_size, 3)}")
                 car_map = np.zeros((map_size, map_size, 3))
             if current_path:
-                state_updated |= write_to_map(car_map, previous_path, value=(0, 0, 0))
-                state_updated |= write_to_map(car_map, current_path, value=(255, 0, 0))
+                state_updated |= write_to_map(car_map, previous_path, value=(0, 0, 0)) # type: ignore
+                state_updated |= write_to_map(car_map, current_path, value=(255, 0, 0)) # type: ignore
                 previous_path = current_path
-            state_updated |= write_to_map(car_map, obstacles, value=(0, 255, 0))
-            state_updated |= write_to_map(car_map, [position], value=(0, 0, 255))
-            state_updated |= write_to_map(car_map, [target], value=(255, 255, 255))
+            state_updated |= write_to_map(car_map, obstacles, value=(0, 255, 0)) # type: ignore
+            state_updated |= write_to_map(car_map, [position], value=(0, 0, 255)) # type: ignore
+            state_updated |= write_to_map(car_map, [target], value=(255, 255, 255)) # type: ignore
 
             if state_updated:
                 current_state.save_current_state(
-                    car_map,
+                    car_map, # type: ignore
                     (
-                        ("current_path", current_path),
+                        ("current_path", current_path), # type: ignore
                         ("obstacles", obstacles),
-                        ("xy_position", position),
+                        ("xy_position", position), 
                         ("heading", heading),
                         ("target", target)
                     ),
                     "Logs/"
                 )
 
-            cv2.imshow(mapp_window_name, car_map)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            cv2.imshow(mapp_window_name, car_map) # type: ignore
+            if cv2.waitKey(1) & 0xFF == ord('q'): # type: ignore
                 break
      
     except Exception as e:
-        cv2.destroyAllWindows()
+        cv2.destroyAllWindows() # type: ignore
         server.shutdown()
         raise e
     finally:
-        cv2.destroyAllWindows()
+        cv2.destroyAllWindows() # type: ignore
         server.shutdown()
 
 
@@ -193,22 +193,22 @@ def test_state():
 
     state = State()
     state.save_current_state(
-        test_image,
+        test_image, # type: ignore
         (
             ("Name", "Testing State"),
             ("distance", 1_000),
-            ("position", (100, 100, 100)),
+            ("position", (100, 100, 100)), # type: ignore
             ("obstacles", [(100, 100, 100), (400, 400, 400)])
         ),
         "Logs"
     )
 
     state.save_current_state(
-        test_image,
+        test_image, # type: ignore
         (
             ("Name", "Testing State"),
             ("distance", 1_000),
-            ("position", (100, 100, 100)),
+            ("position", (100, 100, 100)), # type: ignore
             ("obstacles", [(100, 100, 100), (400, 400, 400)])
         ),
         "Logs"

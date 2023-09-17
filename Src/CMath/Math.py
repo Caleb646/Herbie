@@ -41,11 +41,14 @@ class Position:
             y: Union[int, float, None] = None, 
             angle: Union[float, int, None] = None
             ) -> "Position":
-        if x and y and angle:
+        x_true = x is not None
+        y_true = y is not None
+        angle_true = angle is not None
+        if x_true and y_true and angle_true:
             return Position(x, y, angle)
-        if x and y:
+        if x_true and y_true:
             return Position(x, y, self.angle)
-        if angle:
+        if angle_true:
             return Position(self.x, self.y, angle)  
         return Position(self.x, self.y, self.angle) 
     
@@ -60,11 +63,12 @@ class Math:
         ) -> Position:
 
         flip = -1 if flip_y == True else 1
-        rads = py_math.radians(pos.angle)
+        rads = py_math.radians(pos.angle)  
         proj_pos = pos.clone(
             scaled_distance * py_math.cos(rads) + pos.x, 
             scaled_distance * (flip * py_math.sin(rads)) + pos.y
             )
+        #print(pos, proj_pos, scaled_distance)
         if should_round:
             return proj_pos.xy_round()
         return proj_pos

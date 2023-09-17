@@ -1,6 +1,6 @@
-from typing import List, Tuple, Union, Iterable
+from typing import List, Tuple, Union, Iterable, Generator
 import numpy as np
-from CMath import Math, Position
+from Src.CMath.api import Math, Position
 
 class Mapp:
     OBSTACLE_NOTFOUND = -1
@@ -58,8 +58,8 @@ class Mapp:
             car_position.clone(angle=car_position.angle + ultra_sonic_angle),
             raw_distance_in_cm / float(self.cell_size_in_cm),
             flip_y = True
-        ).xy_round()
-        return proj_position
+        )
+        return proj_position.xy_round()
     
     def add_obstacle(
             self, 

@@ -2,7 +2,7 @@ from picar_4wd.pwm import PWM
 from picar_4wd.pin import Pin
 from picar_4wd.servo import Servo
 
-from Base import BaseSensor
+from Src.Hardware.Base import BaseSensor
 
 from typing import Union, Callable
 import numpy as np
@@ -84,3 +84,6 @@ class UltraSonic(BaseSensor):
                 filtered_samples = list(filter(lambda dist : dist != -1, samples))
                 measurements.append([angle_center, sum(filtered_samples) / len(filtered_samples)])
         return measurements
+    
+    def shutdown(self) -> None:
+        pass

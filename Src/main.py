@@ -2,8 +2,9 @@ from typing import Union, Callable, Iterable
 import time
 
 # importing this way will include the picar package
-from Hardware import DriveTrain, UltraSonic, Camera
-from CarNav import Car, Mapp
+from Hardware.api import DriveTrain, UltraSonic, Camera
+from CarNav.api import Car, Mapp
+from CMath.api import Position
 import Tests.test as test
 
 def soft_reset() -> None:
@@ -26,10 +27,10 @@ def car_main(dist_x, dist_y, map_size=51, cell_size=15, servo_offset=35, has_ser
             Mapp(map_size, map_size, cell_size),
             has_server=has_server
             )
-        car.drive((car.x + dist_x, car.y + dist_y))
+        car.drive(Position(car.position.x + dist_x, car.position.y + dist_y))
         #car._turn(-90)
     finally:
-        car.shutdown()
+        car.shutdown() # type: ignore
 
 if __name__ == "__main__":
     

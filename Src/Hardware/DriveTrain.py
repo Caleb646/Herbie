@@ -3,7 +3,7 @@ from picar_4wd.pin import Pin
 from picar_4wd.motor import Motor
 from picar_4wd.speed import Speed
 
-from Base import BaseDriveTrain
+from Src.Hardware.Base import BaseDriveTrain
 
 from typing import Union, Callable
 import time

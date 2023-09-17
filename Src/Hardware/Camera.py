@@ -3,7 +3,7 @@ import time
 from typing import Iterable, NamedTuple, List, Union
 from dataclasses import dataclass
 
-from Base import BaseCamera
+from Src.Hardware.Base import BaseCamera
 
 from tflite_support.task import core, processor, vision
 
