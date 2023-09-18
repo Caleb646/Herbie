@@ -3,9 +3,9 @@ import time
 
 # importing this way will include the picar package
 from Hardware.api import DriveTrain, UltraSonic, Camera
-from CarNav.api import Car, Mapp
+from Network.Client import Client
+from CarNav.api import Car, Mapp, AutonomousController
 from CMath.api import Position
-import Tests.test as test
 
 def soft_reset() -> None:
     from picar_4wd.pin import Pin
@@ -19,16 +19,22 @@ def soft_reset() -> None:
 def car_main(dist_x, dist_y, map_size=51, cell_size=15, servo_offset=35, has_server=False):
     soft_reset()
     time.sleep(0.2)
+    client = None
+    if has_server:
+        client = Client()
     try:
         car = Car(
-            DriveTrain(), 
-            UltraSonic(servo_offset = servo_offset), 
-            Camera(),
-            Mapp(map_size, map_size, cell_size),
-            has_server=has_server
+                AutonomousController(
+                    map_size,
+                    cell_size,
+                    Position(map_size // 2 + dist_x, map_size // 2 + dist_y),
+                    DriveTrain(),
+                    UltraSonic(servo_offset=servo_offset),
+                    Camera()
+                ),
+                client
             )
-        car.drive(Position(car.position.x + dist_x, car.position.y + dist_y))
-        #car._turn(-90)
+        car.drive()
     finally:
         car.shutdown() # type: ignore
 

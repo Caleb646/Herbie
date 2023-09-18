@@ -1,2 +1,2 @@
-from Client import *
-from Server import *
+from Src.Network.Client import *
+from Src.Network.Server import *
