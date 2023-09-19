@@ -1,4 +1,4 @@
-from Src.CarNav.api import Car, AutonomousController
+from Herbie.CarNav.Api import Car, AutonomousController
 
 
 

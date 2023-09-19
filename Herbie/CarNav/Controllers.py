@@ -1,9 +1,9 @@
 
-from Src.Hardware.Base import BaseSensor, BaseCamera, BaseDriveTrain
-from Src.CarNav.Pathfinder import Pathfinder
-from Src.CarNav.Mapp import Mapp
-from Src.CarNav.base import BaseController
-from Src.CMath.api import Math, Position
+from Herbie.Hardware.Base import BaseSensor, BaseCamera, BaseDriveTrain
+from Herbie.CarNav.Pathfinder import Pathfinder
+from Herbie.CarNav.Mapp import Mapp
+from Herbie.CarNav.Base import BaseController, BaseDetector
+from Herbie.CMath.Api import Math, Position
 
 from typing import Any, Generator, List, Tuple, Dict, Union
 import time
@@ -17,11 +17,11 @@ class AutonomousController(BaseController):
             target: Position,
             drive_train: BaseDriveTrain,
             obstacle_sensor: BaseSensor, 
-            camera: Union[BaseCamera, None] = None
+            detector: Union[BaseDetector, None] = None
             ):
         super(AutonomousController, self).__init__(drive_train)
         self.obstacle_sensor_ = obstacle_sensor
-        self.camera_ = camera
+        self.detector_ = detector
         self.mapp_ = Mapp(map_size, map_size, cell_size)
         self.pathfinder_ = Pathfinder()
         self.car_position: Position = Position(
@@ -44,11 +44,11 @@ class AutonomousController(BaseController):
         angle_to_turn = Math.calc_turning_angle(self.car_position, new_position)
         if abs(angle_to_turn) > 0:
             self.turn_(angle_to_turn)
-            self.car_position = self.calc_updated_heading_(self.car_position, angle_to_turn)
+            self.car_position = Math.calc_updated_heading(self.car_position, angle_to_turn)
             if self.scan_update_path_():
                 return False
         self.move_forward_(self.mapp_.cell_size_in_cm)
-        self.car_position = self.calc_updated_xy_position_(self.car_position, self.mapp_.cell_size_in_cm)
+        self.car_position = Math.calc_new_xy_position(self.car_position, self.mapp_.cell_size_in_cm)
         return True
     
     def shutdown(self) -> None:
@@ -65,9 +65,9 @@ class AutonomousController(BaseController):
         }
  
     def see_objects_(self):
-        if self.camera_:
-            camera_results = [self.camera_.see().has_object("stop sign") > 0.5 for _ in range(2)]
-            if sum(camera_results) > 1 and not self.seen_objects_["stop sign"]:
+        if self.detector_:
+            detector_results = [self.detector_.detect().get_object_score("stop sign") > 0.5 for _ in range(2)]
+            if sum(detector_results) > 1 and not self.seen_objects_["stop sign"]:
                 print("Found stop sign")
                 self.seen_objects_["stop sign"] = True
                 time.sleep(3.0)

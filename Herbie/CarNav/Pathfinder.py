@@ -1,8 +1,8 @@
 from typing import Union, List, Tuple
 from heapq import heapify, heappush, heappop
 
-from Src.CarNav.Mapp import Mapp
-from Src.CMath.api import Math, Position
+from Herbie.CarNav.Mapp import Mapp
+from Herbie.CMath.Api import Math, Position
 
 class Pathfinder:
 

@@ -1,6 +1,6 @@
 from typing import List, Tuple, Union
-from Src.CarNav.Mapp import Mapp
-from Src.CMath.api import Math, Position
+from Herbie.CarNav.Mapp import Mapp
+from Herbie.CMath.Api import Math, Position
 from Tests.utils import *
 
 def test_map():

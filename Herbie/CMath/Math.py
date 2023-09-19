@@ -126,6 +126,24 @@ class Math:
         return Math.calc_new_heading(origin.angle, turning_angle)
     
     @staticmethod
+    def calc_new_xy_position(old_position: Position, dist_travelled: float) -> Position:
+        direction = Math.project_position(
+            old_position.clone(0, 0), dist_travelled, flip_y=True
+            )
+        return old_position.clone(
+            old_position.x + direction.x, old_position.y + direction.y
+            )
+
+    @staticmethod
+    def calc_updated_heading(
+            old_position: Position, turning_angle: float
+            ) -> Position:
+        
+        return old_position.clone(
+            angle = Math.calc_new_heading(old_position.angle, turning_angle)
+            )
+    
+    @staticmethod
     def calc_new_heading(current_heading: float, turning_angle: float) -> float:
         """
             current_heading = 0, turning_angle = -90 -> return 270

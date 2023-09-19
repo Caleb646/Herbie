@@ -1,5 +1,5 @@
-from Src.Network.Client import Client
-from Src.CarNav.base import BaseController
+from Herbie.Network.Client import Client
+from Herbie.CarNav.Base import BaseController
 
 from typing import List, Tuple, Union, Iterable
 import time

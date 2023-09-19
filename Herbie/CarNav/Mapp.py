@@ -1,6 +1,6 @@
 from typing import List, Tuple, Union, Iterable, Generator
 import numpy as np
-from Src.CMath.api import Math, Position
+from Herbie.CMath.Api import Math, Position
 
 class Mapp:
     OBSTACLE_NOTFOUND = -1

@@ -2,7 +2,7 @@ from picar_4wd.pwm import PWM
 from picar_4wd.pin import Pin
 from picar_4wd.servo import Servo
 
-from Src.Hardware.Base import BaseSensor
+from Herbie.Hardware.Base import BaseSensor
 
 from typing import Union, Callable
 import numpy as np

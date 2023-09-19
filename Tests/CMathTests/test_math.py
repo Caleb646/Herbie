@@ -1,4 +1,4 @@
-from Src.CMath.Math import Math, Position
+from Herbie.CMath.Math import Math, Position
 from Tests.utils import *
 
 

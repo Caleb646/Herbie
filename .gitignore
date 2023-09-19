@@ -4,3 +4,5 @@
 **Logs**
 **.pytest_cache**
 **.vscode**
+**build**
+**.egg-info**

@@ -74,5 +74,11 @@ class BaseSensor(BaseHardware, ABC):
 
 class BaseCamera(BaseHardware, ABC):
     
-	def see(self) -> Any:
-		...
+    @abstractmethod
+    def see(self) -> Any:
+        ...
+
+    @abstractmethod
+    def is_camera_available(self) -> bool:
+        ...
+    

@@ -1,9 +1,9 @@
 from abc import abstractmethod, ABC
 from typing import Any, Union
-from Src.Hardware.Base import BaseDriveTrain
-from Src.CMath.api import Math, Position
+from Herbie.Hardware.Base import BaseDriveTrain
+from dataclasses import dataclass
 
-from typing import Dict, Iterable, Generator
+from typing import Dict, Iterable, Generator, List
 
 class AbstractController(ABC):
 
@@ -36,33 +36,33 @@ class BaseController(AbstractController):
     def __init__(self, drive_train: BaseDriveTrain):
         self.drive_train_ = drive_train
 
-    # def drive(self) -> None:
-    #     assert False, "Not Implemented"
-
-    # def step(self, new_position: Position) -> Position:
-    #     assert False, "Not Implemented"
-
-    # def shutdown(self) -> None:
-    #     assert False, "Not Implemented"
-
     def move_forward_(self, distance: Union[int, float], power=50) -> None:
         self.drive_train_.forward_for(power, distance)
 
     def turn_(self, turning_angle: float) -> None:
         self.drive_train_.rotate(turning_angle)
 
-    def calc_updated_xy_position_(self, old_position: Position, dist_travelled: float) -> Position:
-        direction = Math.project_position(
-            old_position.clone(0, 0), dist_travelled, flip_y=True
-            )
-        return old_position.clone(
-            old_position.x + direction.x, old_position.y + direction.y
-            )
 
-    def calc_updated_heading_(
-            self, old_position: Position, turning_angle: float
-            ) -> Position:
-        
-        return old_position.clone(
-            angle = Math.calc_new_heading(old_position.angle, turning_angle)
-            )
+@dataclass(frozen=True)
+class DetectedObject:
+	score: float
+	name: str
+
+@dataclass(frozen=True)
+class DetectionResult:
+	status: bool
+	object_list: List[DetectedObject]
+
+	def get_object_score(self, name: str) -> float:
+		# its possible that the object shows up in the object_list more than once
+		return max(
+			filter(lambda obj : obj.name == name, self.object_list), 
+			key=lambda obj : obj.score, 
+			default = DetectedObject(0.0, "invalid_object")
+		).score
+
+class BaseDetector(ABC):
+
+    @abstractmethod
+    def detect(self) -> DetectionResult:
+        ...
