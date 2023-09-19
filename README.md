@@ -58,15 +58,15 @@ to mix and match various components, such as sensors, cameras, controller types,
    ```python
    car = Car(
        AutonomousController(
-            map_size = 11, # how big the grid that your exists in will be
-            cell_size = 25, # how big each cell in the grid is in centimeters
-            target = Position(9, 9), # the x, y position in the car's map that it needs to drive to
-            drive_train = DriveTrain(), # the drivetrain controls how the car rotates and moves forwards and backwards
-            obstacle_sensor = UltraSonic(), # the ultrasonic is how the car detects obstacles it needs to avoid
-            detector = TFDetector(Camera(), model_path="path to detection model")) # the class responsible for detecting various objects using the car's camera
+            map_size = 11, # how big the grid the car exists in will be.
+            cell_size = 25, # how big each cell in the grid is in centimeters.
+            target = Position(9, 9), # the x, y position in the car's map that it needs to drive to.
+            drive_train = DriveTrain(), # the drivetrain controls how the car rotates and moves forwards and backwards.
+            obstacle_sensor = UltraSonic(), # the ultrasonic is how the car detects obstacles it needs to avoid.
+            detector = TFDetector(Camera(), model_path="path to detection model")) # the class responsible for detecting various objects using the car's camera.
        ),
-       # a standard socket client that connects to a server and sends
-       # data about the car's position, current obstacles, and the current path the car has chosen to take
+       # Client is an optional argument. It is a standard socket client that connects to a server and sends
+       # data about the car's position, current obstacles, and the current path the car has chosen to take.
        Client() 
    )
     ```
@@ -88,18 +88,11 @@ So they can be imported and used to create a user specified class that can be us
     from Herbie.Hardware.Base import BaseSensor
     
     class MySensor(BaseSensor):
-        # The methods below are required for the Sensor to be able to interact with the higher level
+        # Below are the only methods required for the Sensor to be able to interact with the higher level
         # classes such as AutonomousController.
         def get_distance(self) -> float:
             """Implementation"""
-        def get_distance_at(self, degrees_to: float) -> tuple[float, float]:
-            """Implementation"""
-        def scan(
-                self, from_degrees: float, 
-                to_degrees: float, 
-                num_steps: int, 
-                samples_per_step: int = 2
-                ):
+        def move_sensor_to(self, angle: float) -> bool:
             """Implementation"""
 
     # Now all that is needed to use this class is to pass it to the Controller class when setting up the car.
