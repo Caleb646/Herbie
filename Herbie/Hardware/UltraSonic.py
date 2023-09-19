@@ -19,7 +19,6 @@ class UltraSonic(BaseSensor):
         self.trig = Pin("D8")
         self.echo = Pin("D9")
         self.servo = Servo(PWM("P0"), offset=self.servo_offset)
-        self.current_angle = 0
         self.max_angle = self.ANGLE_RANGE / 2
         self.min_angle = -self.ANGLE_RANGE / 2
 
@@ -48,42 +47,10 @@ class UltraSonic(BaseSensor):
             return -1
         return dist
     
-    def get_distance_at(self, degrees_to: float) -> tuple[float, float]:
-        self.servo.set_angle(degrees_to)
+    def move_sensor_to(self, angle: float) -> bool:
+        self.servo.set_angle(angle)
         time.sleep(0.1)
-        self.current_angle = degrees_to
-        return (degrees_to, self.get_distance())
+        return True
 
-    def scan(
-            self, from_degrees: float, to_degrees: float, num_steps: int, samples_per_step: int = 2
-            ) -> list[tuple[float, float]]:
-        half_steps = num_steps // 2 
-        #        
-        step_size = from_degrees // half_steps
-        from_angles = [from_degrees - (i * step_size) for i in range(half_steps)]
-        #
-        step_size = to_degrees // half_steps
-        to_angles = [to_degrees - (i * step_size) for i in range(half_steps)]
-        #
-        all_angles = sorted(from_angles + to_angles + [0])
-        measurements = []
-        for angle in all_angles:
-            angle_center, distance_center = self.get_distance_at(angle)
-            samples = [distance_center]
-            sample_size = 20 // samples_per_step
-            for i in range(1, (samples_per_step // 2) + 1):
-                _, d = self.get_distance_at(angle - sample_size * i)
-                samples.append(d)
-            for i in range(1, (samples_per_step // 2) + 1):
-                _, d = self.get_distance_at(angle + sample_size * i)
-                samples.append(d)
-            if samples.count(-1) > len(samples) // 2:
-                continue
-                #print(f"Object with distance samples {samples} and angle: {angle_center} was determined to be noise.")
-            else:
-                filtered_samples = list(filter(lambda dist : dist != -1, samples))
-                measurements.append([angle_center, sum(filtered_samples) / len(filtered_samples)])
-        return measurements
-    
     def shutdown(self) -> None:
         pass
