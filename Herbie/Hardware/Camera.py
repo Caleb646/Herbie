@@ -7,7 +7,6 @@ import numpy as np
 
 from Herbie.Hardware.Base import BaseCamera
 
-
 class Camera(BaseCamera):
 	def __init__(self, 
 				camera_id: int = 0, 
@@ -29,17 +28,3 @@ class Camera(BaseCamera):
 
 	def shutdown(self) -> None:
 		pass
-
-
-if __name__ == "__main__":
-	#camera_lite3 = Camera(model_path="./Models/model.tflite", width=320, height=320)
-	# camera_lite0 = Camera(model_path="./Models/lite0_int8_model.tflite", width=320, height=320)
-	#camera_lite4 = Camera(model_path="./Models/efficientdet_lite4_model.tflite", width=640, height=640)
-	#camera_gen = camera_lite0.see()
-	#print(camera_gen)
-	#print(next(camera_gen))
-	#print(next(camera_gen))
-	# for result in camera_lite0.see():
-	#   print(result)
-	#   time.sleep(1)
-	""""""
