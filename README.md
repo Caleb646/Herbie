@@ -114,4 +114,4 @@ This project is licensed under the MIT License.
 
 ---
 
-Happy driving with your Raspberry Pi Self-Driving RC Car! If you have any questions or need assistance, feel free to reach out to our community or open an issue in this repository.
+Happy driving with your Raspberry Pi Self-Driving RC Car!
