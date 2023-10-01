@@ -13,6 +13,8 @@ class Camera(BaseCamera):
 				width: int = 320, 
 				height: int = 320
 			):
+		self.width_ = width
+		self.height_ = height
 		self.cap = cv2.VideoCapture(camera_id) # type: ignore
 		self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width) # type: ignore
 		self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height) # type: ignore
@@ -23,8 +25,8 @@ class Camera(BaseCamera):
 	def see(self) -> Any:
 		status, image = self.cap.read()
 		if status == False:
-			return status, np.array([])
-		return status, image
+			return status, np.zeros((self.width_, self.height_, 3))
+		return status, cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 	def shutdown(self) -> None:
 		pass

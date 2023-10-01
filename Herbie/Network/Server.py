@@ -64,9 +64,9 @@ class WebSocketServer:
         self.messages_: deque[Dict[str, Any]] = deque()
 
     async def send(self, message: Dict[str, Any]):
-        encoded_data = json.dumps(message).encode()
+        encoded_data = json.dumps(message)
         for ws in self.connections_:
-            ws.send(encoded_data)
+            await ws.send(encoded_data)
 
     def get_message(self) -> Dict[str, Any]:
         if self.messages_:
@@ -75,11 +75,16 @@ class WebSocketServer:
 
     async def recv_(self, ws):
         async for message in ws:
-            self.messages_.append(json.loads(message.decode()))
-            await asyncio.sleep(0.05)
+            print(f"Received Message: {message}")
+            decoded_data = message
+            if isinstance(message, bytes):
+                decoded_data = message.decode()
+            self.messages_.append(json.loads(decoded_data))
+            await asyncio.sleep(0.01)
 
     async def handle(self, ws):
         self.connections_.add(ws)
+        print(f"Adding Connection: {ws}")
         consumer_task = asyncio.create_task(self.recv_(ws))
         done, pending = await asyncio.wait(
             [consumer_task],
@@ -89,13 +94,12 @@ class WebSocketServer:
             task.cancel()
 
     async def run(self):
-        print("starting")
         async with serve(lambda ws : self.handle(ws), self.host, self.port):
-            print("serving")
+            print(f"Serving at: ws://{self.host}:{self.port}")
             await asyncio.Future()  # run forever
 
 
 if __name__ == "__main__":
     server1 = WebSocketServer("localhost", 8080)
-    server2 = WebSocketServer("localhost", 8000)
+    #server2 = WebSocketServer("localhost", 8000)
     asyncio.run(server1.run())

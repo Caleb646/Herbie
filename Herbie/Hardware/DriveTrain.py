@@ -1,7 +1,4 @@
-from picar_4wd.pwm import PWM
-from picar_4wd.pin import Pin
-from picar_4wd.motor import Motor
-from picar_4wd.speed import Speed
+
 
 from Herbie.Hardware.Base import BaseDriveTrain
 
@@ -25,6 +22,10 @@ def block_for(
 
 class DriveTrain(BaseDriveTrain):
     def __init__(self):
+        from picar_4wd.pwm import PWM
+        from picar_4wd.pin import Pin
+        from picar_4wd.motor import Motor
+        from picar_4wd.speed import Speed
         self.left_front = Motor(PWM("P13"), Pin("D4"), is_reversed=False) # motor 1
         self.right_front = Motor(PWM("P12"), Pin("D5"), is_reversed=False) # motor 2
         self.left_rear = Motor(PWM("P8"), Pin("D11"), is_reversed=False) # motor 3
@@ -130,3 +131,45 @@ class DriveTrain(BaseDriveTrain):
     @property
     def get_avg_speed(self) -> float:
         return (self.get_left_rear_speed + self.get_right_rear_speed) / 2.0
+    
+
+class MockDriveTrain(BaseDriveTrain):
+    def __init__(self):
+        pass
+
+    def stop(self) -> None:
+        print("DriveTrain Stopping")
+
+    def forward_for(self, power: int, centimeters: float) -> None:
+        print(f"DriveTrain Moving Forward For: {power} - {centimeters}")
+
+    def backward_for(self, power: int, centimeters: float) -> None:
+        print(f"DriveTrain Moving Backward For: {power} - {centimeters}")
+
+    def forward(self, power: int) -> None:
+        print(f"DriveTrain Moving Forward: {power}")
+
+    def backward(self, power: int) -> None:
+        print(f"DriveTrain Moving Backward: {power}")
+
+    def turn_left(self, power: int) -> None:
+        print(f"DriveTrain Turning Left: {power}")
+
+    def turn_right(self, power: int) -> None:
+        print(f"DriveTrain Turning Right: {power}")
+
+    def rotate(self, degrees_to: float):
+        print(f"DriveTrain Rotating for {degrees_to}")
+
+    def shutdown(self) -> None:
+        print("DriveTrain Shutting down")
+
+    @property
+    def get_left_rear_speed(self) -> Union[int, float]: # speed in centimeters per second
+        return 10
+    @property
+    def get_right_rear_speed(self) -> Union[int, float]: # speed in centimeters per second
+        return 10
+    @property
+    def get_avg_speed(self) -> float:
+        return 10

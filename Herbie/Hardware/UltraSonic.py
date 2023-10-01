@@ -1,7 +1,3 @@
-from picar_4wd.pwm import PWM
-from picar_4wd.pin import Pin
-from picar_4wd.servo import Servo
-
 from Herbie.Hardware.Base import BaseSensor
 
 from typing import Union, Callable
@@ -14,6 +10,9 @@ class UltraSonic(BaseSensor):
     STEP = 18
 
     def __init__(self, servo_offset: int, timeout: float = 0.01):
+        from picar_4wd.pwm import PWM
+        from picar_4wd.pin import Pin
+        from picar_4wd.servo import Servo
         self.servo_offset = int(servo_offset)
         self.timeout = timeout
         self.trig = Pin("D8")

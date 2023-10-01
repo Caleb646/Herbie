@@ -15,10 +15,17 @@ class Car:
         if self.client_:
             self.client_.connect()
 
-    async def drive(self):
+    def drive(self):
         try:
             for status in self.controller_.drive():
                 self.send_server_data_()
+        except Exception as e:
+            self.shutdown()
+            raise e
+        
+    async def drive_async(self):
+        try:
+            await self.controller_.drive()
         except Exception as e:
             self.shutdown()
             raise e
