@@ -5,8 +5,9 @@ from Herbie.CarNav.Mapp import Mapp
 from Herbie.CarNav.Base import BaseController, BaseDetector
 from Herbie.CMath.Api import Math, Position
 
-from typing import Any, Generator, List, Tuple, Dict, Union
+from typing import Any, AsyncGenerator, Generator, List, Tuple, Dict, Union
 import time
+import asyncio
 from collections import deque
 
 class AutonomousController(BaseController):
@@ -81,3 +82,74 @@ class AutonomousController(BaseController):
                 )
             return True
         return False
+    
+
+class WebController(BaseController):
+
+    def __init__(
+            self, 
+            drive_train: BaseDriveTrain, 
+            server, 
+            camera: Union[BaseCamera, None] = None,
+            sensor: Union[BaseSensor, None] = None
+            ):
+        super(WebController, self).__init__(drive_train)
+        self.server_ = server
+        self.camera_ = camera
+        self.sensor_ = sensor
+        self.go_ = {
+            "forward": False,
+            "backward": False,
+            "turn_left": False,
+            "turn_right": False
+        }
+
+    async def drive(self) -> AsyncGenerator[bool, None]: # Generator[YieldType, SendType, ReturnType]
+        run_server = asyncio.create_task(self.server_.run())
+        driving = asyncio.create_task(self.drive_())
+        done, pending = await asyncio.wait(
+            [run_server, driving],
+            return_when=asyncio.FIRST_COMPLETED
+        )
+        for task in pending:
+            task.cancel()
+        yield True
+
+    async def drive_(self):
+        while True:
+            message: Dict[str, Any] = self.server_.get_message()
+            if message:
+                self.go_ = message
+                successful = self.step()
+                _ = self.server_.send(self.get_log_data())
+            await asyncio.sleep(0.05)
+
+    async def step(self) -> bool:
+        assert sum(self.go_.values()) <= 1, f"{self.go_}"
+        if self.go_["forward"]:
+            self.move_forward_(5)
+        elif self.go_["backward"]:
+            self.move_backward_(5)
+        elif self.go_["turn_left"]:
+            self.turn_(5)
+        elif self.go_["turn_right"]:
+            self.turn_(-5)
+        else:
+            self.drive_train_.stop()
+        return True
+
+    def shutdown(self) -> None:
+        self.drive_train_.shutdown()
+    
+    def get_log_data(self) -> Dict[str, Any]:
+        camera_image = [[]]
+        if self.camera_:
+            camera_image = self.camera_.see().tolist()
+        obstacle = (-1, -1)
+        if self.sensor_:
+            obstacle = self.sensor_.get_distance_at(0)
+        return {
+            "speed": self.drive_train_.get_avg_speed,
+            "image": camera_image,
+            "obstacle": obstacle
+        }

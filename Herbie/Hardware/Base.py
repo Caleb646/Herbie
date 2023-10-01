@@ -18,6 +18,10 @@ class BaseDriveTrain(BaseHardware, ABC):
         ...
 
     @abstractmethod
+    def backward_for(self, power: int, centimeters: float) -> None:
+        ...
+
+    @abstractmethod
     def forward(self, power: int) -> None:
         ...
 

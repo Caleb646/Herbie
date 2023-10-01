@@ -56,6 +56,18 @@ class DriveTrain(BaseDriveTrain):
             )
         self.stop()
 
+    def backward_for(self, power: int, centimeters: float) -> None:
+        starting_speed = 30 # cm
+        self.backward(power)
+        block_for(
+            centimeters / starting_speed, 
+            starting_speed, 
+            lambda : self.get_avg_speed, 
+            step=0.01, 
+            max_steps=200
+            )
+        self.stop()
+
     def forward(self, power: int) -> None:
         self.left_front.set_power(power)
         self.left_rear.set_power(power)

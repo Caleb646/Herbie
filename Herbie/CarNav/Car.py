@@ -15,7 +15,7 @@ class Car:
         if self.client_:
             self.client_.connect()
 
-    def drive(self):
+    async def drive(self):
         try:
             for status in self.controller_.drive():
                 self.send_server_data_()

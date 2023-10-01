@@ -5,8 +5,8 @@ import asyncio
 # importing this way will include the picar package
 from Herbie.Hardware.Api import DriveTrain, UltraSonic, Camera
 from Herbie.Network.Client import Client
-from Herbie.CarNav.Api import Car, AutonomousController, TFDetector
-from Herbie.CMath.Api import Position
+from Herbie.CarNav.Api import Car, WebController
+from Herbie.Network.Api import WebSocketServer
 
 def soft_reset() -> None:
     from picar_4wd.pin import Pin
@@ -25,17 +25,13 @@ def car_main(dist_x, dist_y, map_size=51, cell_size=15, servo_offset=35, has_ser
         client = Client()
     try:
         car = Car(
-                AutonomousController(
-                    map_size,
-                    cell_size,
-                    Position(map_size // 2 + dist_x, map_size // 2 + dist_y),
+                WebController(
                     DriveTrain(),
-                    UltraSonic(servo_offset=servo_offset),
-                    TFDetector(Camera())
+                    WebSocketServer()
                 ),
                 client
             )
-        _ = car.drive()
+        asyncio.run(car.drive())
     finally:
         car.shutdown() # type: ignore
 

@@ -1,5 +1,5 @@
 import os
-from typing import Any, Tuple, Union, List, Iterable
+from typing import Any, Dict, Tuple, Union, List, Iterable
 from dataclasses import dataclass
 import socket
 import json
@@ -7,6 +7,7 @@ import select
 import time
 
 import asyncio
+from collections import deque
 from websockets.server import serve
 from websockets.sync.client import connect
 
@@ -59,31 +60,42 @@ class WebSocketServer:
     def __init__(self, host=socket.gethostbyname(socket.gethostname()), port=8000) -> None:
         self.host = host
         self.port = port
+        self.connections_ = set()
+        self.messages_: deque[Dict[str, Any]] = deque()
 
-    async def send(self, ws):
+    async def send(self, message: Dict[str, Any]):
+        encoded_data = json.dumps(message).encode()
+        for ws in self.connections_:
+            ws.send(encoded_data)
+
+    def get_message(self) -> Dict[str, Any]:
+        if self.messages_:
+            return self.messages_.popleft()
+        return {}
+
+    async def recv_(self, ws):
         async for message in ws:
-            pass
-
-    async def recv(self, ws):
-        while True:
-            await asyncio.sleep(2.0)
-            await ws.send("data")
+            self.messages_.append(json.loads(message.decode()))
+            await asyncio.sleep(0.05)
 
     async def handle(self, ws):
-        consumer_task = asyncio.create_task(self.recv(ws))
-        producer_task = asyncio.create_task(self.send(ws))
+        self.connections_.add(ws)
+        consumer_task = asyncio.create_task(self.recv_(ws))
         done, pending = await asyncio.wait(
-            [consumer_task, producer_task],
+            [consumer_task],
             return_when=asyncio.FIRST_COMPLETED,
         )
         for task in pending:
             task.cancel()
 
     async def run(self):
+        print("starting")
         async with serve(lambda ws : self.handle(ws), self.host, self.port):
+            print("serving")
             await asyncio.Future()  # run forever
 
 
 if __name__ == "__main__":
-    server = WebSocketServer("localhost")
-    asyncio.run(server.run())
+    server1 = WebSocketServer("localhost", 8080)
+    server2 = WebSocketServer("localhost", 8000)
+    asyncio.run(server1.run())

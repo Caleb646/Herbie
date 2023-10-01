@@ -24,6 +24,10 @@ class AbstractController(ABC):
         ...
 
     @abstractmethod
+    def move_backward_(self, distance: Union[int, float], power=50) -> None:
+        ...
+
+    @abstractmethod
     def move_forward_(self, distance: Union[int, float]) -> None:
         ...
 
@@ -35,6 +39,9 @@ class BaseController(AbstractController):
 
     def __init__(self, drive_train: BaseDriveTrain):
         self.drive_train_ = drive_train
+
+    def move_backward_(self, distance: Union[int, float], power=50) -> None:
+         self.drive_train_.backward_for(power, distance)
 
     def move_forward_(self, distance: Union[int, float], power=50) -> None:
         self.drive_train_.forward_for(power, distance)
