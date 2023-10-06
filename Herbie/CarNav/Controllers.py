@@ -146,13 +146,13 @@ class WebController(BaseController):
     def get_log_data(self) -> Dict[str, Any]:
         camera_image = np.zeros((320, 320, 3), dtype=np.uint8)
         alphas = np.ones((320, 320, 1), dtype=np.uint8) * 255
-        if self.camera_:
-            camera_image = self.camera_.see()
+        if self.camera_ and self.camera_.is_camera_available():
+            status, camera_image = self.camera_.see()
         obstacle = (-1, -1)
         if self.sensor_:
             obstacle = self.sensor_.get_distance_at(0)
         return {
-            "speed": self.drive_train_.get_avg_speed,
+            "speed": round(self.drive_train_.get_avg_speed, 1),
             "image": np.concatenate([camera_image, alphas], axis=2).flatten().tolist(),
             "obstacle": obstacle
         }
