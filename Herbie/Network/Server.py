@@ -11,12 +11,19 @@ from collections import deque
 from websockets.server import serve
 from websockets.sync.client import connect
 
-
+socket.AF_BLUETOOTH
 
 class SocketServer:
     CLOSING_MESSAGE = "CLOSING_SOCKET"
-    def __init__(self, host=socket.gethostbyname(socket.gethostname()), port=8000) -> None:
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def __init__(
+            self, 
+            host = socket.gethostbyname(socket.gethostname()), 
+            port = 8000, 
+            address_family = socket.AF_INET,
+            socket_type = socket.SOCK_STREAM,
+            protocol = 0
+            ) -> None:
+        self.socket = socket.socket(address_family, socket_type, protocol)
         self.host = host
         self.port = port
 
@@ -100,6 +107,16 @@ class WebSocketServer:
 
 
 if __name__ == "__main__":
-    server1 = WebSocketServer("localhost", 8080)
+    #server1 = WebSocketServer("localhost", 8080)
     #server2 = WebSocketServer("localhost", 8000)
-    asyncio.run(server1.run())
+    #asyncio.run(server1.run())
+    socket_server = SocketServer(
+        host="2c:33:58:12:b2:76", 
+        port=4, # For some reason only channel 4 works 
+        address_family=socket.AF_BLUETOOTH, 
+        # BTPROTO_RFCOMM accepts (bdaddr, channel) 
+        # where bdaddr is the Bluetooth address as a string and channel is an integer.
+        protocol=socket.BTPROTO_RFCOMM 
+        )
+    for i in socket_server.run():
+        print(i)
