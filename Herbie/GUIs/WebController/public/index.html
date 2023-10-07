@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Controller</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  </head>
+  <body>
+		<h4 class="d-flex justify-content-center">Use the WASD Keys to Move the Car</h4>
+
+		<div class="row">
+			<div class="col-auto">
+				<input class="form-control" type="text" id="ip_port_id" class="fadeIn second" name="IP_Port_Value" placeholder="IP:Port">
+			</div>
+			<div class="col-auto">
+				<button id="ip_port_btn_id" class="btn btn-primary mb-3">Connect</button>
+			</div>
+		</div>
+
+		<div class="container">
+			<div class="row d-flex justify-content-center ">
+				<div class="col-auto">
+					<label id="speed_id" class="">Current Speed: 0.00</button>
+				</div>
+				<div class="col-auto">
+					<label id="obstacles_id" class="">Obstacles: -1 -1</button>
+				</div>
+			</div>
+			<div class="row d-flex justify-content-center ">
+				<div class="col-auto">
+					<canvas id="image_id" width="320" height="320" style="border:1px solid #000000;"></canvas>
+				</div>
+			</div>
+		</div>
+
+	
+		<script src="dist/bundle.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+	</body>
+</html>

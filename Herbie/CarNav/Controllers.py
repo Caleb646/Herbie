@@ -122,7 +122,7 @@ class WebController(BaseController):
             message: Dict[str, Any] = self.server_.get_message()
             if message:
                 self.go_ = message
-            successful = self.step()
+                successful = self.step()
             await self.server_.send(self.get_log_data())
             await asyncio.sleep(self.sleep_per_step_)
 
@@ -153,6 +153,6 @@ class WebController(BaseController):
             obstacle = self.sensor_.get_distance_at(0)
         return {
             "speed": self.drive_train_.get_avg_speed,
-            "image": np.concatenate([camera_image, alphas], axis=2).flatten().tolist(),
+            "image": np.concatenate([camera_image, alphas], axis=2).flatten().astype(np.uint8).tolist(),
             "obstacle": obstacle
         }

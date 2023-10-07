@@ -134,10 +134,11 @@ class DriveTrain(BaseDriveTrain):
     
 
 class MockDriveTrain(BaseDriveTrain):
-    def __init__(self):
-        pass
+    def __init__(self, verbose=False):
+        self.verbose_ = verbose
 
     def stop(self) -> None:
+        #if self.verbose_:
         print("DriveTrain Stopping")
 
     def forward_for(self, power: int, centimeters: float) -> None:

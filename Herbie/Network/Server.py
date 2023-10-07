@@ -87,7 +87,7 @@ class WebSocketServer:
             if isinstance(message, bytes):
                 decoded_data = message.decode()
             self.messages_.append(json.loads(decoded_data))
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.05)
 
     async def handle(self, ws):
         self.connections_.add(ws)
