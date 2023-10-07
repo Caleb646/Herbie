@@ -1,3 +1,3 @@
-from Camera import *
-from DriveTrain import *
-from UltraSonic import *
+from Herbie.Hardware.Camera import *
+from Herbie.Hardware.DriveTrain import *
+from Herbie.Hardware.UltraSonic import *

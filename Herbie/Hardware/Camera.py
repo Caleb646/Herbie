@@ -26,7 +26,7 @@ class Camera(BaseCamera):
 		status, image = self.cap.read()
 		if status == False:
 			return status, np.zeros((self.width_, self.height_, 3))
-		return status, cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+		return status, cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # type: ignore
 
 	def shutdown(self) -> None:
 		pass

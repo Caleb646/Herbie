@@ -1,8 +1,14 @@
 from typing import Union, Callable, Iterable
 import time
 import asyncio
+import sys
+import os
+import pathlib
 
-# importing this way will include the picar package
+parent = pathlib.Path(os.path.abspath(os.path.curdir))
+herbie_path = os.path.join(str(parent))
+sys.path.append(herbie_path)
+
 from Herbie.Hardware.Api import DriveTrain, UltraSonic, Camera
 from Herbie.Network.Client import Client
 from Herbie.CarNav.Api import Car, WebController
@@ -17,7 +23,7 @@ def soft_reset() -> None:
     time.sleep(0.01)
 
 
-def car_main(dist_x, dist_y, map_size=51, cell_size=15, servo_offset=35, has_server=False):
+def car_main(has_server=False):
     soft_reset()
     time.sleep(0.2)
     client = None
@@ -27,14 +33,15 @@ def car_main(dist_x, dist_y, map_size=51, cell_size=15, servo_offset=35, has_ser
         car = Car(
                 WebController(
                     DriveTrain(),
-                    WebSocketServer()
+                    WebSocketServer(host="192.168.1.36"),
+                    camera = Camera()
                 ),
                 client
             )
-        asyncio.run(car.drive())
+        asyncio.run(car.drive_async())
     finally:
         car.shutdown() # type: ignore
 
 if __name__ == "__main__":  
-    car_main(dist_x=6, dist_y=3, cell_size=25, has_server=True)
+    car_main(has_server=False)
 
