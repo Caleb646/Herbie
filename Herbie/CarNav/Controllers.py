@@ -107,7 +107,7 @@ class WebController(BaseController):
             "turn_right": False
         }
 
-    async def drive(self) -> None: #AsyncGenerator[bool, None]: # Generator[YieldType, SendType, ReturnType]
+    async def drive(self) -> None:
         run_server = asyncio.create_task(self.server_.run())
         driving = asyncio.create_task(self.drive_())
         done, pending = await asyncio.wait(
@@ -127,7 +127,7 @@ class WebController(BaseController):
             await asyncio.sleep(self.sleep_per_step_)
 
     def step(self) -> bool:
-        assert sum(self.go_.values()) <= 1, f"{self.go_}"
+        #assert sum(self.go_.values()) <= 1, f"{self.go_}"
         if self.go_["forward"]:
             self.drive_train_.forward(power=50)
         elif self.go_["backward"]:
@@ -152,12 +152,7 @@ class WebController(BaseController):
         if self.sensor_:
             obstacle = self.sensor_.get_distance_at(0)
         return {
-<<<<<<< HEAD
-            "speed": self.drive_train_.get_avg_speed,
-            "image": np.concatenate([camera_image, alphas], axis=2).flatten().astype(np.uint8).tolist(),
-=======
             "speed": round(self.drive_train_.get_avg_speed, 1),
-            "image": np.concatenate([camera_image, alphas], axis=2).flatten().tolist(),
->>>>>>> d9a6e531b23bdd17c3b7764cc3b7cae7981c9bb7
+            "image": np.concatenate([camera_image, alphas], axis=2).flatten().astype(np.uint8).tolist(),
             "obstacle": obstacle
         }
